@@ -1,48 +1,48 @@
-exports.handler = async function (event, context) {
-  // Zezwalamy tylko na zapytania typu POST
+const fetch = require('node-fetch');
+
+exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
   try {
-    const { image, mask, prompt } = JSON.parse(event.body);
-    const FAL_KEY = process.env.FAL_KEY;
+    const { image, prompt } = JSON.parse(event.body);
 
-    if (!FAL_KEY) {
+    if (!image) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Brak zdjęcia' }) };
+    }
+
+    // Wywołanie darmowego modelu Image-to-Image / Inpainting na Hugging Face
+    const response = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-refiner-1.0", {
+      headers: {
+        Authorization: `Bearer ${process.env.HF_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({
+        inputs: prompt || "photorealistic custom dental gold grillz jewelry on teeth, high quality",
+        parameters: {
+          image: image
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
       return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Brak skonfigurowanego klucza FAL_KEY w Netlify!" })
+        statusCode: response.status,
+        body: JSON.stringify({ error: `Błąd HF: ${errorText}` })
       };
     }
 
-    // Zapytanie do API Fal.ai (Model FLUX.1 Fill)
-    const response = await fetch("https://fal.run/fal-ai/flux-pro/v1.0/fill", {
-      method: "POST",
-      headers: {
-        "Authorization": `Key ${FAL_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        image_url: image,
-        mask_url: mask,
-        prompt: prompt || "custom photorealistic chrome silver 925 grillz on teeth, organic liquid metal style, 8k jewelry photo",
-        guidance_scale: 30,
-        num_inference_steps: 28,
-        output_format: "jpeg"
-      })
-    });
+    const buffer = await response.arrayBuffer();
+    const base64Image = Buffer.from(buffer).toString('base64');
+    const imageSrc = `data:image/jpeg;base64,${base64Image}`;
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.detail || "Błąd generowania w Fal.ai");
-    }
-
-    // Zwracamy wygenerowane zdjęcie
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ outputUrl: data.images[0].url })
+      body: JSON.stringify({ image: imageSrc })
     };
 
   } catch (error) {
