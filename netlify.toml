@@ -1,0 +1,4 @@
+Ini, TOML
+
+[build]
+  functions = "netlify/functions"
