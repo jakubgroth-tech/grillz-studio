@@ -8,55 +8,98 @@ exports.handler = async (event) => {
   try {
     const { image, material, position } = JSON.parse(event.body);
 
+    if (!image) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Brak wgranego zdjęcia.' })
+      };
+    }
+
     const apiKey = process.env.FAL_KEY;
 
     if (!apiKey) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Brak klucza FAL_KEY w zmiennych Netlify!' })
+        body: JSON.stringify({ error: 'Brak klucza FAL_KEY w konfiguracji Netlify.' })
       };
     }
 
-    const promptText = `A close up portrait photo of a person smiling with custom ${material} grillz jewelry fitted on their ${position}, high detailed fashion dental photography, 8k resolution`;
-
-    // Wywołanie stabilnego i błyskawicznego modelu FLUX Schnell w fal.ai
-    const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
+    // -------------------------------------------------------------
+    // ETAP 1: DETEKCJA I SEGMENTACJA ZĘBÓW (SAM2 Model)
+    // Awaryjnie wywołujemy model detekcji do wygenerowania czystej maski
+    // -------------------------------------------------------------
+    const maskResponse = await fetch('https://fal.run/fal-ai/sam2/image', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        prompt: promptText,
-        image_size: "square_hd",
-        num_inference_steps: 4
+        image_url: image,
+        prompts: [{ type: "text", text: "teeth mouth" }]
       })
     });
 
-    const data = await response.json();
+    let maskUrl = null;
+    if (maskResponse.ok) {
+      const maskData = await maskResponse.json();
+      maskUrl = maskData.image_url || (maskData.masks && maskData.masks[0] ? maskData.masks[0].url : null);
+    }
 
-    if (!response.ok) {
+    // -------------------------------------------------------------
+    // ETAP 2: INPAINTING (Modyfikacja TYLKO zębów na zdjęciu)
+    // Jeśli maska z SAM2 nie powstała, wywołujemy wbudowany Inpainting z tekstem detekcji
+    // -------------------------------------------------------------
+    const materialPrompt = material === 'gold' ? 'shiny polished 14k gold' : 'metallic 925 sterling silver';
+    const promptText = `solid ${materialPrompt} grillz caps fitted perfectly over ${position}, realistic metallic sheen, detailed dental jewelry`;
+
+    const inpaintBody = maskUrl ? {
+      image_url: image,
+      mask_url: maskUrl,
+      prompt: promptText,
+      strength: 0.9,
+      guidance_scale: 7.5
+    } : {
+      image_url: image,
+      mask_prompt: "human teeth, smile, mouth",
+      prompt: promptText,
+      strength: 0.9,
+      guidance_scale: 7.5
+    };
+
+    const inpaintResponse = await fetch('https://fal.run/fal-ai/flux/dev/inpainting', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(inpaintBody)
+    });
+
+    const inpaintData = await inpaintResponse.json();
+
+    if (!inpaintResponse.ok) {
       return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: `FAL API error: ${data.detail || JSON.stringify(data)}` })
+        statusCode: inpaintResponse.status,
+        body: JSON.stringify({ error: `Błąd FAL Inpainting: ${inpaintData.detail || JSON.stringify(inpaintData)}` })
       };
     }
 
-    const imageUrl = data.images && data.images[0] ? data.images[0].url : null;
+    const finalResultUrl = inpaintData.images && inpaintData.images[0] ? inpaintData.images[0].url : null;
 
-    if (!imageUrl) {
-      throw new Error('FAL API nie zwróciło adresu obrazu.');
+    if (!finalResultUrl) {
+      throw new Error('API fal.ai nie zwróciło przetworzonego obrazu.');
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ image: imageUrl })
+      body: JSON.stringify({ image: finalResultUrl })
     };
 
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message || 'Wewnętrzny błąd funkcji' })
+      body: JSON.stringify({ error: err.message || 'Błąd serwera' })
     };
   }
 };
