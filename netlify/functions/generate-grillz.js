@@ -20,9 +20,9 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    const promptText = `High-end luxury jewelry macro photography. Solid ${material} grillz caps fitted precisely and seamlessly inside the painted mask area, realistic metallic mirror reflections, natural lighting matching the person's face, precise fit over human teeth, keeping skin, lips, face, and background 100% identical and untouched.`;
+    // Profesjonalny, jubilerski prompt wymuszający realistyczną biżuterię nazębną (grillz) zamiast płomb
+    const promptText = `Ultra-detailed macro jewelry photography of custom-fitted hip-hop dental grillz. Solid ${material} custom dental molds meticulously fitted and snapped precisely over the teeth inside the masked area. Highly polished mirror metallic reflections, sharp realistic contours separating individual teeth caps, natural lighting reflecting off the metal, premium custom jewelry look. Keep the lips, skin, facial features, and background 100% untouched and identical to the original image.`;
 
-    // Używamy stabilnego i szybkiego endpointu fast-sdxl/inpainting aby unikać timeoutów 504 w Netlify, zachowując świetną jakość
     const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
       method: 'POST',
       headers: {
@@ -33,7 +33,8 @@ exports.handler = async (event) => {
         image_url: image,
         mask_url: mask,
         prompt: promptText,
-        strength: 0.90
+        strength: 0.92,
+        guidance_scale: 8.5
       })
     });
 
