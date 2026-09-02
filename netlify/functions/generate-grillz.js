@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -11,7 +9,7 @@ exports.handler = async (event) => {
     if (!image) {
       return { 
         statusCode: 400, 
-        body: JSON.stringify({ error: 'Brak przesłanego zdjęcia w żądaniu.' }) 
+        body: JSON.stringify({ error: 'Brak przesłanego zdjęcia.' }) 
       };
     }
 
@@ -19,15 +17,15 @@ exports.handler = async (event) => {
     if (!apiKey) {
       return { 
         statusCode: 500, 
-        body: JSON.stringify({ error: 'Brak klucza FAL_KEY w zmiennych środowiskowych Netlify.' }) 
+        body: JSON.stringify({ error: 'Brak klucza FAL_KEY w zmiennych Netlify.' }) 
       };
     }
 
-    // --- KROK 1: Konwersja Base64 na plik binarny i wysyłka do oficjalnego CDN fal.ai ---
+    // Konwersja Base64 na bufer binarny
     const base64Clean = image.replace(/^data:image\/\w+;base64,/, '');
     const imageBuffer = Buffer.from(base64Clean, 'base64');
 
-    // Inicjalizacja uploadu w fal.ai CDN
+    // 1. Inicjalizacja uploadu w CDN fal.ai za pomocą natywnego fetch()
     const uploadInitRes = await fetch('https://rest.alpha.fal.ai/storage/upload/initiate', {
       method: 'POST',
       headers: {
@@ -45,11 +43,11 @@ exports.handler = async (event) => {
     if (!uploadInitRes.ok) {
       return {
         statusCode: uploadInitRes.status,
-        body: JSON.stringify({ error: `Błąd CDN FAL (Upload Init): ${JSON.stringify(uploadInitData)}` })
+        body: JSON.stringify({ error: `Błąd inicjalizacji CDN FAL: ${JSON.stringify(uploadInitData)}` })
       };
     }
 
-    // Wgranie bajtów obrazu do tymczasowego magazynu FAL
+    // 2. Wysłanie pliku do magazynu FAL
     const uploadPutRes = await fetch(uploadInitData.upload_url, {
       method: 'PUT',
       headers: { 'Content-Type': 'image/png' },
@@ -58,18 +56,17 @@ exports.handler = async (event) => {
 
     if (!uploadPutRes.ok) {
       return {
-        statusCode: uploadPutRes.status,
-        body: JSON.stringify({ error: 'Nie udało się przesłać pliku graficznego do magazynu FAL.' })
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Nie udało się przesłać pliku do magazynu FAL.' })
       };
     }
 
     const publicImageUrl = uploadInitData.file_url;
 
-    // --- KROK 2: Dwuetapowy Inpainting (wykrycie zębów + wygenerowanie biżuterii) ---
+    // 3. Wywołanie modelu Inpainting z automatycznym maskowaniem zębów
     const materialPrompt = material === 'gold' ? '14k polished gold' : '925 sterling silver';
     const promptText = `solid metallic ${materialPrompt} grillz fitted over ${position}, hyperrealistic dental jewelry, perfectly matching smile, 8k resolution`;
 
-    // Wywołanie stabilnego endpointu fal-ai/flux-general/inpainting
     const inpaintRes = await fetch('https://fal.run/fal-ai/flux-general/inpainting', {
       method: 'POST',
       headers: {
@@ -101,7 +98,7 @@ exports.handler = async (event) => {
     if (!resultUrl) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Model FAL nie zwrócił adresu wygenerowanego obrazu.', raw: inpaintData })
+        body: JSON.stringify({ error: 'Model FAL nie zwrócił obrazu.', raw: inpaintData })
       };
     }
 
@@ -113,7 +110,7 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: `Błąd wykonywania funkcji: ${err.message}` })
+      body: JSON.stringify({ error: `Błąd kodu funkcji: ${err.message}` })
     };
   }
 };
