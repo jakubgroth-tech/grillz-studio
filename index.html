@@ -228,7 +228,7 @@
     <div id="statusText">Trwa nakładanie biżuterii przez AI...</div>
 
     <div id="resultContainer">
-      <label style="text-align: center; margin-bottom: 8px;">Wynik:</label>
+      <label style="text-align: center; margin-bottom: 8px; display: block;">Wynik:</label>
       <img id="resultImg" alt="Wygenerowany wynik">
     </div>
   </div>
@@ -262,7 +262,6 @@
       reader.readAsDataURL(file);
     });
 
-    // Funkcja generująca białą maskę o wymiarach wczytanego zdjęcia
     function createDefaultMask() {
       if (!loadedImgElement) return base64Image;
       const canvas = document.createElement('canvas');
@@ -270,7 +269,6 @@
       canvas.height = loadedImgElement.height || 800;
       const ctx = canvas.getContext('2d');
       
-      // Tworzymy pełną białą maskę
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
@@ -303,16 +301,24 @@
           })
         });
 
-        const data = await response.json();
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const rawText = await response.text();
+          throw new Error(`Serwer zwrócił niepoprawną odpowiedź (${response.status}): ${rawText}`);
+        }
 
         if (!response.ok) {
-          throw new Error(data.error || 'Błąd generowania');
+          throw new Error(data.error || `Błąd serwera (${response.status})`);
         }
 
         resultImg.src = data.image;
         resultContainer.style.display = 'block';
       } catch (err) {
-        alert('Błąd: ' + err.message);
+        alert('BŁĄD GENEROWANIA:\n\n' + err.message);
       } finally {
         generateBtn.disabled = false;
         statusText.style.display = 'none';
