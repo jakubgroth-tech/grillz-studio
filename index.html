@@ -9,8 +9,8 @@
   <style>
     :root {
       --bg-color: #0b0c10;
-      --card-bg: rgba(22, 24, 31, 0.85);
-      --card-border: rgba(255, 255, 255, 0.1);
+      --card-bg: rgba(22, 24, 31, 0.9);
+      --card-border: rgba(255, 255, 255, 0.12);
       --accent-gold: #d4af37;
       --accent-gold-hover: #f3ce5a;
       --text-main: #f0f2f5;
@@ -27,78 +27,100 @@
     .container {
       width: 100%; max-width: 440px; background: var(--card-bg);
       border: 1px solid var(--card-border); border-radius: var(--radius);
-      padding: 28px 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      padding: 24px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
     }
-    .header { text-align: center; margin-bottom: 24px; }
+    .header { text-align: center; margin-bottom: 20px; }
     
-    /* Styl dla Twojego logo */
-    .brand-logo {
-      max-height: 48px;
-      max-width: 160px;
-      object-fit: contain;
-      margin-bottom: 8px;
+    /* Elegancka oprawa logo */
+    .logo-wrapper {
+      background: #ffffff;
       display: inline-block;
+      padding: 8px 16px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
+    .brand-logo {
+      max-height: 38px;
+      max-width: 150px;
+      object-fit: contain;
+      display: block;
+    }
+    .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px; }
     
-    .logo { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px; }
-    
+    /* Sztywny kontener zapobiegający zmianom rozmiaru */
     .preview-box {
-      width: 100%; height: 340px; background: var(--input-bg);
+      width: 100%; height: 360px; background: var(--input-bg);
       border: 2px dashed var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; margin-bottom: 12px; cursor: pointer;
+      align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer;
     }
     .preview-box input[type="file"] {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 20;
     }
-    .upload-text { text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px; }
+    .upload-text { text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px; z-index: 5; }
     .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 15px; }
 
+    /* Obszar płótna z obsługą zooma */
+    .canvas-viewport {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      overflow: hidden; display: none; z-index: 10;
+    }
+    .canvas-container {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      transform-origin: center center; cursor: grab;
+    }
+    .canvas-container:active { cursor: grabbing; }
+
     canvas {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
     }
     #imageCanvas { z-index: 1; }
     #maskCanvas { z-index: 2; cursor: crosshair; }
 
-    .instructions {
-      font-size: 12px; color: var(--accent-gold); text-align: center;
-      margin-bottom: 12px; display: none; background: rgba(212, 175, 55, 0.1);
-      padding: 8px; border-radius: 8px;
-    }
-
-    .action-row {
-      display: flex; gap: 8px; margin-bottom: 16px; display: none;
+    /* Pasek narzędzi zoomu i pędzla */
+    .tools-bar {
+      display: flex; gap: 6px; margin-bottom: 12px; display: none;
     }
     .btn-tool {
-      flex: 1; background: transparent; color: var(--text-muted); border: 1px solid var(--card-border);
-      padding: 8px; font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
+      flex: 1; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--card-border);
+      padding: 7px; font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
       transition: all 0.2s;
     }
-    .btn-tool:hover { border-color: var(--accent-gold); color: var(--text-main); }
+    .btn-tool:hover { border-color: var(--accent-gold); color: var(--text-main); background: rgba(212,175,55,0.1); }
 
-    .form-group { margin-bottom: 16px; }
-    label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .instructions {
+      font-size: 11px; color: var(--accent-gold); text-align: center;
+      margin-bottom: 12px; display: none; background: rgba(212, 175, 55, 0.08);
+      padding: 6px; border-radius: 6px;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
     select {
       width: 100%; background: var(--input-bg); border: 1px solid var(--card-border);
-      border-radius: 10px; padding: 12px 14px; color: var(--text-main); font-size: 14px; outline: none;
+      border-radius: 10px; padding: 10px 14px; color: var(--text-main); font-size: 14px; outline: none;
     }
     
     .btn-submit {
       width: 100%; background: var(--accent-gold); color: #000; border: none;
-      border-radius: 10px; padding: 15px; font-family: 'Syne', sans-serif;
-      font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 10px;
+      border-radius: 10px; padding: 14px; font-family: 'Syne', sans-serif;
+      font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 6px;
+      transition: background 0.2s;
     }
+    .btn-submit:hover { background: var(--accent-gold-hover); }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    #statusText { text-align: center; font-size: 12px; color: var(--accent-gold); margin-top: 12px; display: none; }
+    #statusText { text-align: center; font-size: 12px; color: var(--accent-gold); margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
 
   <div class="container">
     <div class="header">
-      <!-- Miejsce na Twoje logo. Wrzuć plik logo.png do głównego folderu na GitHubie -->
-      <img src="logo.png" alt="Logo" class="brand-logo" onerror="this.style.display='none'">
+      <div class="logo-wrapper">
+        <img src="logo.png" alt="Logo" class="brand-logo" onerror="this.parentElement.style.display='none'">
+      </div>
       <div class="logo">Grillz Studio</div>
     </div>
 
@@ -107,15 +129,22 @@
       <div class="upload-text" id="uploadPlaceholder">
         <span>Wgraj zdjęcie uśmiechu</span>(Twarz na wprost)
       </div>
-      <canvas id="imageCanvas"></canvas>
-      <canvas id="maskCanvas"></canvas>
+      
+      <div class="canvas-viewport" id="canvasViewport">
+        <div class="canvas-container" id="canvasContainer">
+          <canvas id="imageCanvas"></canvas>
+          <canvas id="maskCanvas"></canvas>
+        </div>
+      </div>
     </div>
 
-    <div class="instructions" id="hint">🖌️ Zamaluj pędzlem dokładnie te zęby, na których chcesz grillz</div>
+    <div class="instructions" id="hint">🖌️ Użyj lup, aby przybliżyć zęby, a następnie zamaluj je pędzlem</div>
     
-    <div class="action-row" id="actionRow">
-      <button type="button" class="btn-tool" id="clearBtn">Wyczyść pędzel</button>
-      <button type="button" class="btn-tool" id="resetBtn">Wgraj inne zdjęcie</button>
+    <div class="tools-bar" id="toolsBar">
+      <button type="button" class="btn-tool" id="zoomInBtn">🔍➕ Przybliż</button>
+      <button type="button" class="btn-tool" id="zoomOutBtn">🔍➖ Oddal</button>
+      <button type="button" class="btn-tool" id="clearBtn">↺ Wyczyść</button>
+      <button type="button" class="btn-tool" id="resetBtn">📁 Nowe</button>
     </div>
 
     <div class="form-group">
@@ -128,11 +157,13 @@
 
     <button type="button" class="btn-submit" id="generateBtn">Nałóż Grillz</button>
 
-    <div id="statusText">AI dopasowuje biżuterię do zaznaczenia...</div>
+    <div id="statusText">AI generuje fotorealistyczną biżuterię...</div>
   </div>
 
   <script>
     const imageInput = document.getElementById('imageInput');
+    const canvasViewport = document.getElementById('canvasViewport');
+    const canvasContainer = document.getElementById('canvasContainer');
     const imageCanvas = document.getElementById('imageCanvas');
     const maskCanvas = document.getElementById('maskCanvas');
     const imgCtx = imageCanvas.getContext('2d');
@@ -143,6 +174,11 @@
 
     let loadedImage = null;
     let isDrawing = false;
+    let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let startX, startY;
 
     imageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -168,12 +204,17 @@
       imgCtx.drawImage(loadedImage, 0, 0);
       clearMasks();
 
+      // Reset zoomu
+      scale = 1;
+      panX = 0;
+      panY = 0;
+      updateTransform();
+
       document.getElementById('uploadPlaceholder').style.display = 'none';
       imageInput.style.display = 'none';
-      imageCanvas.style.display = 'block';
-      maskCanvas.style.display = 'block';
+      canvasViewport.style.display = 'block';
       document.getElementById('hint').style.display = 'block';
-      document.getElementById('actionRow').style.display = 'flex';
+      document.getElementById('toolsBar').style.display = 'flex';
     }
 
     function clearMasks() {
@@ -188,12 +229,26 @@
       imageInput.value = '';
       imageInput.style.display = 'block';
       document.getElementById('uploadPlaceholder').style.display = 'block';
-      imageCanvas.style.display = 'none';
-      maskCanvas.style.display = 'none';
+      canvasViewport.style.display = 'none';
       document.getElementById('hint').style.display = 'none';
-      document.getElementById('actionRow').style.display = 'none';
+      document.getElementById('toolsBar').style.display = 'none';
       clearMasks();
     });
+
+    // Kontrola Zoomu (Lupa)
+    document.getElementById('zoomInBtn').addEventListener('click', () => {
+      scale = Math.min(scale + 0.5, 4.0);
+      updateTransform();
+    });
+    document.getElementById('zoomOutBtn').addEventListener('click', () => {
+      scale = Math.max(scale - 0.5, 1.0);
+      if (scale === 1) { panX = 0; panY = 0; }
+      updateTransform();
+    });
+
+    function updateTransform() {
+      canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
 
     function getPos(e) {
       const rect = maskCanvas.getBoundingClientRect();
@@ -207,18 +262,30 @@
       };
     }
 
-    function startDraw(e) { e.preventDefault(); if(loadedImage) { isDrawing = true; draw(e); } }
-    function stopDraw() { isDrawing = false; maskCtx.beginPath(); hiddenMaskCtx.beginPath(); }
+    // Puste malowanie / przesuwanie (gdy skala > 1, przeciąganie przesuwa obrazek)
+    function startDraw(e) {
+      e.preventDefault();
+      if (!loadedImage) return;
+      isDrawing = true;
+      draw(e);
+    }
+
+    function stopDraw() {
+      isDrawing = false;
+      maskCtx.beginPath();
+      hiddenMaskCtx.beginPath();
+    }
     
     function draw(e) {
       if (!isDrawing) return;
       e.preventDefault();
       const pos = getPos(e);
-      const brushSize = Math.max(imageCanvas.width * 0.03, 15);
+      // Pędzel automatycznie dopasowuje wielkość zależnie od stopnia przybliżenia
+      const brushSize = Math.max(imageCanvas.width * 0.025, 12) / scale;
 
       maskCtx.lineWidth = brushSize;
       maskCtx.lineCap = 'round';
-      maskCtx.strokeStyle = 'rgba(212, 175, 55, 0.65)';
+      maskCtx.strokeStyle = 'rgba(212, 175, 55, 0.7)';
       maskCtx.lineTo(pos.x, pos.y);
       maskCtx.stroke();
       maskCtx.beginPath();
@@ -275,12 +342,10 @@
 
         if (!response.ok) throw new Error(data.error || 'Błąd generowania');
 
+        // Podmiana z zachowaniem dokładnych proporcji i wymiarów
         loadedImage = new Image();
         loadedImage.onload = () => {
           setupCanvases();
-          maskCanvas.style.display = 'none';
-          document.getElementById('hint').style.display = 'none';
-          document.getElementById('clearBtn').style.display = 'none';
         };
         loadedImage.src = data.image;
 
