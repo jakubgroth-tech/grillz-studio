@@ -10,7 +10,6 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Brak zdjęcia' }) };
     }
 
-    // Wyłącznie Złoto 14K lub Srebro 925
     let promptMaterial = "14k polished yellow gold custom grillz caps";
     if (material && material.toLowerCase().includes("srebro")) {
       promptMaterial = "polished 925 sterling silver custom grillz caps";
@@ -20,10 +19,10 @@ exports.handler = async (event) => {
     if (position === "Górny łuk (Top)") promptPosition = "fitted on upper top teeth only";
     if (position === "Dolny łuk (Bottom)") promptPosition = "fitted on lower bottom teeth only";
 
-    const fullPrompt = `${promptMaterial} ${promptPosition}, dental jewelry, photorealistic metallic reflections, highly detailed, perfect fit`;
+    const fullPrompt = `${promptMaterial} ${promptPosition}, dental jewelry, realistic metallic reflections, keeping exact face identity and beard intact`;
 
-    // Poprawny endpoint dla inpaintingu na Fal.ai
-    const response = await fetch("https://fal.run/fal-ai/flux/dev/inpainting", {
+    // Używamy stabilnego Image-to-Image z BARDZO MAŁĄ SIŁĄ ZMIAN ( strength: 0.28 )
+    const response = await fetch("https://fal.run/fal-ai/flux/dev/image-to-image", {
       method: "POST",
       headers: {
         "Authorization": `Key ${process.env.FAL_KEY}`,
@@ -31,10 +30,10 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         image_url: image,
-        mask_prompt: "teeth, mouth",
         prompt: fullPrompt,
-        strength: 0.85,
-        num_inference_steps: 28
+        strength: 0.28, // Niska wartość blokuje zamianę twarzy i płci!
+        guidance_scale: 3.5,
+        num_inference_steps: 20
       }),
     });
 
