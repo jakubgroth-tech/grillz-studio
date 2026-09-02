@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GRILLZ STUDIO — Virtual Try-On</title>
-  
-  <!-- Konfiguracja ikony dla natywnego kafelka na telefonie (iOS / Android) -->
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,7 +37,6 @@
       position: relative; overflow: hidden;
     }
     
-    /* Subtelny pattern z logo w tle */
     .container::before {
       content: "";
       position: absolute;
@@ -238,6 +235,8 @@
     const hiddenMaskCtx = hiddenMaskCanvas.getContext('2d');
 
     let loadedImage = null;
+    let originalNaturalWidth = 0;
+    let originalNaturalHeight = 0;
     let isDrawing = false;
     let isPanning = false;
     let currentMode = 'draw';
@@ -281,6 +280,10 @@
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
+          // Zapisujemy oryginalne wymiary wejściowe, aby zachować je bez zmian na końcu
+          originalNaturalWidth = img.width;
+          originalNaturalHeight = img.height;
+
           let width = img.width;
           let height = img.height;
           const maxDim = 1280;
@@ -303,7 +306,7 @@
           
           loadedImage = new Image();
           loadedImage.onload = setupViewer;
-          loadedImage.src = hiddenImageCanvas.toDataURL('image/jpeg', 0.9);
+          loadedImage.src = hiddenImageCanvas.toDataURL('image/jpeg', 0.95);
         };
         img.src = event.target.result;
       };
@@ -483,7 +486,7 @@
       statusText.style.display = 'block';
 
       try {
-        const imageB64 = hiddenImageCanvas.toDataURL('image/jpeg', 0.88);
+        const imageB64 = hiddenImageCanvas.toDataURL('image/jpeg', 0.95);
         const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
 
         const response = await fetch('/.netlify/functions/generate-grillz', {
@@ -506,11 +509,24 @@
 
         if (!response.ok) throw new Error(data.error || 'Błąd generowania');
 
-        loadedImage = new Image();
-        loadedImage.onload = () => {
-          setupViewer();
+        // Wymuszenie idealnego zachowania oryginalnych wymiarów (wielkości i proporcji) wejściowych
+        const resultImg = new Image();
+        resultImg.crossOrigin = "anonymous";
+        resultImg.onload = () => {
+          const finalCanvas = document.createElement('canvas');
+          finalCanvas.width = originalNaturalWidth;
+          finalCanvas.height = originalNaturalHeight;
+          const finalCtx = finalCanvas.getContext('2d');
+          
+          finalCtx.drawImage(resultImg, 0, 0, originalNaturalWidth, originalNaturalHeight);
+          
+          loadedImage = new Image();
+          loadedImage.onload = () => {
+            setupViewer();
+          };
+          loadedImage.src = finalCanvas.toDataURL('image/jpeg', 0.95);
         };
-        loadedImage.src = data.image;
+        resultImg.src = data.image;
 
       } catch (err) {
         alert('SZCZEGÓŁY BŁĘDU:\n\n' + err.message);
