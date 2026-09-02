@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GRILLZ STUDIO — Virtual Try-On</title>
+  
+  <!-- Konfiguracja ikony dla natywnego kafelka na telefonie (iOS / Android) -->
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0c10">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <style>
@@ -31,6 +39,7 @@
       position: relative; overflow: hidden;
     }
     
+    /* Subtelny pattern z logo w tle */
     .container::before {
       content: "";
       position: absolute;
@@ -74,21 +83,22 @@
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       transform-origin: 0 0;
       touch-action: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     #previewImageElement {
-      max-width: 100%;
-      max-height: 100%;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       object-fit: contain;
-      display: block;
       pointer-events: none;
+      z-index: 1;
     }
 
     #maskCanvas {
       position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 2;
       cursor: crosshair;
     }
     .canvas-container.pan-mode #maskCanvas { cursor: grab; }
@@ -271,7 +281,6 @@
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          // Automatyczne skalowanie wielkich zdjęć z telefonu do bezpiecznego limitu Netlify (max 1280px)
           let width = img.width;
           let height = img.height;
           const maxDim = 1280;
@@ -304,6 +313,10 @@
     function setupViewer() {
       const width = hiddenImageCanvas.width;
       const height = hiddenImageCanvas.height;
+
+      const containerWidth = dropArea.clientWidth;
+      const calculatedHeight = containerWidth * (height / width);
+      dropArea.style.height = Math.min(Math.max(calculatedHeight, 280), 420) + 'px';
 
       hiddenMaskCtx.fillStyle = '#000000';
       hiddenMaskCtx.fillRect(0, 0, width, height);
@@ -352,6 +365,7 @@
       canvasViewport.style.display = 'none';
       document.getElementById('hint').style.display = 'none';
       document.getElementById('toolsBar').style.display = 'none';
+      dropArea.style.height = '340px';
       clearMasks();
     });
 
