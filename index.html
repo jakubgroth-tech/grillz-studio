@@ -9,7 +9,7 @@
   <style>
     :root {
       --bg-color: #0b0c10;
-      --card-bg: rgba(22, 24, 31, 0.92);
+      --card-bg: rgba(22, 24, 31, 0.94);
       --card-border: rgba(255, 255, 255, 0.12);
       --accent-gold: #d4af37;
       --accent-gold-hover: #f3ce5a;
@@ -27,28 +27,30 @@
     .container {
       width: 100%; max-width: 440px; background: var(--card-bg);
       border: 1px solid var(--card-border); border-radius: var(--radius);
-      padding: 24px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
+      padding: 24px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
     }
     .header { text-align: center; margin-bottom: 18px; }
     
+    /* Elegancki kafelek pod logo */
     .logo-wrapper {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--card-border);
+      background: #ffffff;
+      border: 1px solid rgba(212, 175, 55, 0.3);
       display: inline-block;
-      padding: 10px 20px;
-      border-radius: 12px;
+      padding: 12px 24px;
+      border-radius: 14px;
       margin-bottom: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     .brand-logo {
-      max-height: 36px;
-      max-width: 140px;
+      max-height: 40px;
+      max-width: 160px;
       object-fit: contain;
       display: block;
     }
-    .logo { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--accent-gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .logo { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px; text-transform: uppercase; }
     
     .preview-box {
-      width: 100%; height: 340px; background: var(--input-bg);
+      width: 100%; height: 350px; background: var(--input-bg);
       border: 2px dashed var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
       align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer;
@@ -65,7 +67,8 @@
     }
     .canvas-container {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      transform-origin: 0 0; /* Precyzyjne mapowanie współrzędnych pędzla przy zoomie */
+      transform-origin: 0 0;
+      touch-action: none;
     }
 
     canvas {
@@ -73,24 +76,28 @@
     }
     #imageCanvas { z-index: 1; }
     #maskCanvas { z-index: 2; cursor: crosshair; }
+    .canvas-container.pan-mode #maskCanvas { cursor: grab; }
+    .canvas-container.pan-mode:active #maskCanvas { cursor: grabbing; }
 
+    /* Pasek narzędzi */
     .tools-bar {
-      display: flex; gap: 6px; margin-bottom: 12px; display: none;
+      display: flex; gap: 5px; margin-bottom: 10px; display: none;
     }
     .btn-tool {
-      flex: 1; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--card-border);
-      padding: 7px; font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
-      transition: all 0.2s;
+      flex: 1; background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--card-border);
+      padding: 6px 4px; font-size: 10px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; text-align: center;
     }
-    .btn-tool:hover { border-color: var(--accent-gold); color: var(--text-main); background: rgba(212,175,55,0.1); }
+    .btn-tool:hover { border-color: var(--accent-gold); color: var(--text-main); }
+    .btn-tool.active-mode { background: rgba(212, 175, 55, 0.15); border-color: var(--accent-gold); color: var(--accent-gold); }
 
     .instructions {
       font-size: 11px; color: var(--accent-gold); text-align: center;
-      margin-bottom: 12px; display: none; background: rgba(212, 175, 55, 0.08);
+      margin-bottom: 10px; display: none; background: rgba(212, 175, 55, 0.08);
       padding: 6px; border-radius: 6px;
     }
 
-    /* Kafelki wyboru materiału */
+    /* Kafelki materiału */
     .form-group { margin-bottom: 14px; }
     .label-title { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
     
@@ -103,43 +110,26 @@
       background: var(--input-bg);
       border: 2px solid var(--card-border);
       border-radius: 12px;
-      padding: 12px;
+      padding: 10px 12px;
       display: flex;
       align-items: center;
       gap: 10px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .material-tile:hover {
-      border-color: rgba(212, 175, 55, 0.5);
-    }
+    .material-tile:hover { border-color: rgba(212, 175, 55, 0.5); }
     .material-tile.active {
       border-color: var(--accent-gold);
       background: rgba(212, 175, 55, 0.08);
     }
     .tile-color {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      flex-shrink: 0;
+      width: 24px; height: 24px; border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3); flex-shrink: 0;
     }
-    .tile-color.gold {
-      background: linear-gradient(135deg, #f3ce5a 0%, #d4af37 50%, #aa820a 100%);
-    }
-    .tile-color.silver {
-      background: linear-gradient(135deg, #ffffff 0%, #cfd5db 50%, #8a94a0 100%);
-    }
-    .tile-text {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-    .tile-sub {
-      font-size: 10px;
-      color: var(--text-muted);
-      display: block;
-    }
+    .tile-color.gold { background: linear-gradient(135deg, #f3ce5a 0%, #d4af37 50%, #aa820a 100%); }
+    .tile-color.silver { background: linear-gradient(135deg, #ffffff 0%, #cfd5db 50%, #8a94a0 100%); }
+    .tile-text { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .tile-sub { font-size: 10px; color: var(--text-muted); display: block; }
     
     .btn-submit {
       width: 100%; background: var(--accent-gold); color: #000; border: none;
@@ -166,7 +156,7 @@
     <div class="preview-box" id="dropArea">
       <input type="file" id="imageInput" accept="image/*">
       <div class="upload-text" id="uploadPlaceholder">
-        <span>Wgraj zdjęcie uśmiechu</span>(Twarz na wprost)
+        <span>Wgraj zdjęcie uśmiechu</span>(Wysoka rozdzielczość)
       </div>
       
       <div class="canvas-viewport" id="canvasViewport">
@@ -177,12 +167,14 @@
       </div>
     </div>
 
-    <div class="instructions" id="hint">🖌️ Przybliż lupą i zamaluj dokładnie wybrane zęby</div>
+    <div class="instructions" id="hint">🖌️ Zamaluj precyzyjnie wybrane zęby pędzlem</div>
     
     <div class="tools-bar" id="toolsBar">
-      <button type="button" class="btn-tool" id="zoomInBtn">🔍➕ Przybliż</button>
-      <button type="button" class="btn-tool" id="zoomOutBtn">🔍➖ Oddal</button>
-      <button type="button" class="btn-tool" id="clearBtn">↺ Wyczyść</button>
+      <button type="button" class="btn-tool active-mode" id="modeDrawBtn">🖌️ Maluj</button>
+      <button type="button" class="btn-tool" id="modePanBtn">🖐️ Przesuń</button>
+      <button type="button" class="btn-tool" id="zoomInBtn">🔍➕</button>
+      <button type="button" class="btn-tool" id="zoomOutBtn">🔍➖</button>
+      <button type="button" class="btn-tool" id="clearBtn">↺ Czyść</button>
       <button type="button" class="btn-tool" id="resetBtn">📁 Nowe</button>
     </div>
 
@@ -206,9 +198,9 @@
       </div>
     </div>
 
-    <button type="button" class="btn-submit" id="generateBtn">Nałóż Grillz</button>
+    <button type="button" class="btn-submit" id="generateBtn">Nałóż Grillz (Premium)</button>
 
-    <div id="statusText">AI generuje fotorealistyczną biżuterię...</div>
+    <div id="statusText">AI generuje fotorealistyczną biżuterię w wysokiej jakości...</div>
   </div>
 
   <script>
@@ -225,16 +217,40 @@
 
     let loadedImage = null;
     let isDrawing = false;
+    let isPanning = false;
+    let currentMode = 'draw'; // 'draw' lub 'pan'
     let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let startX = 0;
+    let startY = 0;
     let selectedMaterial = "14k shiny gold";
 
-    // Obsługa kafelków materiału
+    // Wybór materiału kafelkami
     document.querySelectorAll('.material-tile').forEach(tile => {
       tile.addEventListener('click', () => {
         document.querySelectorAll('.material-tile').forEach(t => t.classList.remove('active'));
         tile.classList.add('active');
         selectedMaterial = tile.getAttribute('data-value');
       });
+    });
+
+    // Przełączanie trybów: Maluj vs Przesuń
+    const modeDrawBtn = document.getElementById('modeDrawBtn');
+    const modePanBtn = document.getElementById('modePanBtn');
+
+    modeDrawBtn.addEventListener('click', () => {
+      currentMode = 'draw';
+      modeDrawBtn.classList.add('active-mode');
+      modePanBtn.classList.remove('active-mode');
+      canvasContainer.classList.remove('pan-mode');
+    });
+
+    modePanBtn.addEventListener('click', () => {
+      currentMode = 'pan';
+      modePanBtn.classList.add('active-mode');
+      modeDrawBtn.classList.remove('active-mode');
+      canvasContainer.classList.add('pan-mode');
     });
 
     imageInput.addEventListener('change', (e) => {
@@ -262,6 +278,8 @@
       clearMasks();
 
       scale = 1;
+      panX = 0;
+      panY = 0;
       updateTransform();
 
       document.getElementById('uploadPlaceholder').style.display = 'none';
@@ -269,6 +287,12 @@
       canvasViewport.style.display = 'block';
       document.getElementById('hint').style.display = 'block';
       document.getElementById('toolsBar').style.display = 'flex';
+      
+      // Domyślnie tryb malowania
+      currentMode = 'draw';
+      modeDrawBtn.classList.add('active-mode');
+      modePanBtn.classList.remove('active-mode');
+      canvasContainer.classList.remove('pan-mode');
     }
 
     function clearMasks() {
@@ -289,51 +313,78 @@
       clearMasks();
     });
 
-    // Zoom (Lupa) z zachowaniem środka
+    // Kontrola Zoomu
     document.getElementById('zoomInBtn').addEventListener('click', () => {
-      scale = Math.min(scale + 0.5, 3.5);
+      scale = Math.min(scale + 0.5, 4.0);
       updateTransform();
     });
     document.getElementById('zoomOutBtn').addEventListener('click', () => {
       scale = Math.max(scale - 0.5, 1.0);
+      if (scale === 1) { panX = 0; panY = 0; }
       updateTransform();
     });
 
     function updateTransform() {
-      // Skalowanie od lewego górnego rogu z translate dla wyśśrodkowania kontenera
-      canvasContainer.style.transform = `scale(${scale})`;
+      // Ograniczenie przesuwania w granicach obrazu
+      const maxPanX = (scale - 1) * canvasViewport.clientWidth;
+      const maxPanY = (scale - 1) * canvasViewport.clientHeight;
+      if (scale === 1) { panX = 0; panY = 0; }
+      
+      canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
-    function getPos(e) {
+    // Precyzyjne mapowanie współrzędnych uwzględniające skalę i translację kontenera
+    function getCanvasCoords(e) {
       const rect = maskCanvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-      // Precyzyjne mapowanie uwzględniające aktualną skalę zooma i rzeczywisty rozmiar płótna
+      // Dokładne przeskalowanie pozycji myszy względem renderowanego elementu canvas
       const x = ((clientX - rect.left) / rect.width) * maskCanvas.width;
       const y = ((clientY - rect.top) / rect.height) * maskCanvas.height;
       return { x, y };
     }
 
-    function startDraw(e) {
-      e.preventDefault();
+    // Obsługa interakcji myszy/dotyku (Malowanie lub Przesuwanie)
+    function pointerDown(e) {
       if (!loadedImage) return;
-      isDrawing = true;
-      draw(e);
+      e.preventDefault();
+      
+      if (currentMode === 'pan') {
+        isPanning = true;
+        startX = (e.touches ? e.touches[0].clientX : e.clientX) - panX;
+        startY = (e.touches ? e.touches[0].clientY : e.clientY) - panY;
+      } else {
+        isDrawing = true;
+        draw(e);
+      }
     }
 
-    function stopDraw() {
+    function pointerMove(e) {
+      if (isPanning) {
+        e.preventDefault();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        panX = clientX - startX;
+        panY = clientY - startY;
+        updateTransform();
+      } else if (isDrawing) {
+        e.preventDefault();
+        draw(e);
+      }
+    }
+
+    function pointerUp() {
       isDrawing = false;
+      isPanning = false;
       maskCtx.beginPath();
       hiddenMaskCtx.beginPath();
     }
-    
+
     function draw(e) {
-      if (!isDrawing) return;
-      e.preventDefault();
-      const pos = getPos(e);
-      // Pędzel automatycznie zmniejsza grubości przy przybliżeniu dla idealnej precyzji
-      const brushSize = Math.max(imageCanvas.width * 0.018, 10) / scale;
+      const pos = getCanvasCoords(e);
+      // Rozmiar pędzla dostosowany do precyzji
+      const brushSize = Math.max(imageCanvas.width * 0.015, 8) / Math.sqrt(scale);
 
       maskCtx.lineWidth = brushSize;
       maskCtx.lineCap = 'round';
@@ -352,14 +403,15 @@
       hiddenMaskCtx.moveTo(pos.x, pos.y);
     }
 
-    maskCanvas.addEventListener('mousedown', startDraw);
-    maskCanvas.addEventListener('mousemove', draw);
-    maskCanvas.addEventListener('mouseup', stopDraw);
-    maskCanvas.addEventListener('mouseleave', stopDraw);
-    maskCanvas.addEventListener('touchstart', startDraw, {passive: false});
-    maskCanvas.addEventListener('touchmove', draw, {passive: false});
-    maskCanvas.addEventListener('touchend', stopDraw);
+    maskCanvas.addEventListener('mousedown', pointerDown);
+    window.addEventListener('mousemove', pointerMove);
+    window.addEventListener('mouseup', pointerUp);
 
+    maskCanvas.addEventListener('touchstart', pointerDown, {passive: false});
+    window.addEventListener('touchmove', pointerMove, {passive: false});
+    window.addEventListener('touchend', pointerUp);
+
+    // Generowanie wizualizacji
     document.getElementById('generateBtn').addEventListener('click', async () => {
       if (!loadedImage) { alert('Wgraj zdjęcie!'); return; }
 
@@ -370,7 +422,8 @@
       statusText.style.display = 'block';
 
       try {
-        const imageB64 = imageCanvas.toDataURL('image/jpeg', 0.95);
+        // Wysyłamy obraz w oryginalnej rozdzielczości bez kompresji
+        const imageB64 = imageCanvas.toDataURL('image/jpeg', 1.0);
         const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
 
         const response = await fetch('/.netlify/functions/generate-grillz', {
