@@ -15,7 +15,6 @@ exports.handler = async (event) => {
       return { statusCode: 500, body: JSON.stringify({ error: 'Brak klucza FAL_KEY.' }) };
     }
 
-    // Bezpośrednie przekazanie Base64 do szybkiego endpointu Flux Schnell z modyfikacją promptu
     const materialText = material === 'gold' ? '14k gold' : '925 silver';
     const promptText = `A close-up portrait of a person smiling, showing realistic ${materialText} grillz on ${position}, photorealistic, 8k`;
 
@@ -27,7 +26,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         prompt: promptText,
-        image_url: image, // FAL akceptuje base64/data-uri bezpośrednio w nowszych wersjach fluxa
+        image_url: image,
         image_size: "square_hd",
         num_inference_steps: 4,
         enable_safety_checker: false
@@ -39,6 +38,7 @@ exports.handler = async (event) => {
     if (!response.ok) {
       return {
         statusCode: response.status,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ error: `FAL Error: ${data.detail || JSON.stringify(data)}` })
       };
     }
@@ -46,17 +46,24 @@ exports.handler = async (event) => {
     const resultUrl = data.images && data.images[0] ? data.images[0].url : null;
 
     if (!resultUrl) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'Brak obrazu w odpowiedzi FAL.' }) };
+      return { 
+        statusCode: 500, 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: 'Brak obrazu w odpowiedzi FAL.' }) 
+      };
     }
 
+    // TUTAJ DODANY NAGŁÓWEK JSON - TO ROZWIĄZUJE BŁĄD
     return {
       statusCode: 200,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image: resultUrl })
     };
 
   } catch (err) {
     return {
       statusCode: 500,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ error: `Błąd: ${err.message}` })
     };
   }
