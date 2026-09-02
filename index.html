@@ -20,11 +20,7 @@
       --radius: 16px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background-color: var(--bg-color);
@@ -47,11 +43,7 @@
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-
+    .header { text-align: center; margin-bottom: 24px; }
     .logo {
       font-family: 'Syne', sans-serif;
       font-size: 26px;
@@ -60,12 +52,7 @@
       text-transform: uppercase;
       color: var(--accent-gold);
     }
-
-    .subtitle {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
+    .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
     .preview-box {
       width: 100%;
@@ -83,110 +70,39 @@
 
     .preview-box input[type="file"] {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-      z-index: 10;
+      top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0; cursor: pointer; z-index: 10;
     }
 
-    .upload-text {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 13px;
-      pointer-events: none;
-    }
+    .upload-text { text-align: center; color: var(--text-muted); font-size: 13px; pointer-events: none; }
+    .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 15px; margin-bottom: 4px; }
 
-    .upload-text span {
-      display: block;
-      color: var(--accent-gold);
-      font-weight: 600;
-      font-size: 15px;
-      margin-bottom: 4px;
-    }
+    #previewImg { width: 100%; height: 100%; object-fit: contain; display: none; }
 
-    #previewImg {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: none;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    label {
-      display: block;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px; }
 
     select {
-      width: 100%;
-      background: var(--input-bg);
+      width: 100%; background: var(--input-bg);
       border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 12px 14px;
-      color: var(--text-main);
-      font-size: 14px;
-      outline: none;
-    }
-
-    select:focus {
-      border-color: var(--accent-gold);
+      border-radius: 10px; padding: 12px 14px;
+      color: var(--text-main); font-size: 14px; outline: none;
     }
 
     .btn-submit {
-      width: 100%;
-      background: var(--accent-gold);
-      color: #000;
-      border: none;
-      border-radius: 10px;
-      padding: 15px;
-      font-family: 'Syne', sans-serif;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: background 0.2s ease;
+      width: 100%; background: var(--accent-gold);
+      color: #000; border: none; border-radius: 10px;
+      padding: 15px; font-family: 'Syne', sans-serif;
+      font-size: 14px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; cursor: pointer; margin-top: 10px;
     }
 
-    .btn-submit:hover {
-      background: var(--accent-gold-hover);
-    }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn-submit:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    #statusText { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 12px; display: none; }
 
-    #statusText {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 12px;
-      display: none;
-    }
-
-    #resultContainer {
-      margin-top: 20px;
-      display: none;
-    }
-
-    #resultImg {
-      width: 100%;
-      border-radius: var(--radius);
-      border: 1px solid var(--accent-gold);
-    }
+    #resultContainer { margin-top: 20px; display: none; }
+    #resultImg { width: 100%; border-radius: var(--radius); border: 1px solid var(--accent-gold); }
   </style>
 </head>
 <body>
@@ -209,23 +125,24 @@
     <div class="form-group">
       <label for="material">Materiał</label>
       <select id="material">
-        <option value="Złoto 14K">Złoto 14K</option>
-        <option value="Srebro 925">Srebro 925</option>
+        <option value="14k gold">Złoto 14K</option>
+        <option value="925 sterling silver">Srebro 925</option>
+        <option value="diamond encrusted">Diamenty</option>
       </select>
     </div>
 
     <div class="form-group">
       <label for="position">Pozycja</label>
       <select id="position">
-        <option value="Góra">Góra (Górny łuk)</option>
-        <option value="Dół">Dół (Dolny łuk)</option>
-        <option value="Full">Full (Góra i Dół)</option>
+        <option value="top teeth">Góra (Górny łuk)</option>
+        <option value="bottom teeth">Dół (Dolny łuk)</option>
+        <option value="top and bottom teeth">Full (Góra i Dół)</option>
       </select>
     </div>
 
     <button type="button" class="btn-submit" id="generateBtn">Generuj Wizualizację</button>
 
-    <div id="statusText">Trwa nakładanie biżuterii przez AI...</div>
+    <div id="statusText">Trwa generowanie przez FAL AI...</div>
 
     <div id="resultContainer">
       <label style="text-align: center; margin-bottom: 8px; display: block;">Wynik:</label>
@@ -243,7 +160,6 @@
     const resultImg = document.getElementById('resultImg');
 
     let base64Image = null;
-    let loadedImgElement = null;
 
     imageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -255,35 +171,13 @@
         previewImg.src = base64Image;
         previewImg.style.display = 'block';
         uploadPlaceholder.style.display = 'none';
-
-        loadedImgElement = new Image();
-        loadedImgElement.src = base64Image;
       };
       reader.readAsDataURL(file);
     });
 
-    function createDefaultMask() {
-      if (!loadedImgElement) return base64Image;
-      const canvas = document.createElement('canvas');
-      canvas.width = loadedImgElement.width || 800;
-      canvas.height = loadedImgElement.height || 800;
-      const ctx = canvas.getContext('2d');
-      
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      return canvas.toDataURL('image/png');
-    }
-
     generateBtn.addEventListener('click', async () => {
-      if (!base64Image) {
-        alert('Proszę najpierw wgrać zdjęcie!');
-        return;
-      }
-
       const material = document.getElementById('material').value;
       const position = document.getElementById('position').value;
-      const maskBase64 = createDefaultMask();
 
       generateBtn.disabled = true;
       statusText.style.display = 'block';
@@ -295,30 +189,21 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image: base64Image,
-            mask: maskBase64,
             material: material,
             position: position
           })
         });
 
-        const contentType = response.headers.get('content-type');
-        let data;
-        
-        if (contentType && contentType.includes('application/json')) {
-          data = await response.json();
-        } else {
-          const rawText = await response.text();
-          throw new Error(`Serwer zwrócił niepoprawną odpowiedź (${response.status}): ${rawText}`);
-        }
+        const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || `Błąd serwera (${response.status})`);
+          throw new Error(data.error || 'Błąd generowania');
         }
 
         resultImg.src = data.image;
         resultContainer.style.display = 'block';
       } catch (err) {
-        alert('BŁĄD GENEROWANIA:\n\n' + err.message);
+        alert('Błąd FAL AI:\n' + err.message);
       } finally {
         generateBtn.disabled = false;
         statusText.style.display = 'none';
