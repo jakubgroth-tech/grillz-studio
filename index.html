@@ -31,7 +31,6 @@
       position: relative; overflow: hidden;
     }
     
-    /* Subtle Logo Pattern Background Watermark */
     .container::before {
       content: "";
       position: absolute;
@@ -43,10 +42,7 @@
       pointer-events: none;
       z-index: 0;
     }
-    .container > * {
-      position: relative;
-      z-index: 1;
-    }
+    .container > * { position: relative; z-index: 1; }
 
     .header { text-align: center; margin-bottom: 22px; }
     .logo { 
@@ -335,8 +331,8 @@
       canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
+    // 100% precyzyjne mapowanie współrzędnych pędzla uwzględniające pan i zoom
     function getCanvasCoords(e) {
-      const rect = maskCanvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
@@ -344,8 +340,8 @@
       const relX = clientX - viewportRect.left;
       const relY = clientY - viewportRect.top;
       
-      const x = ((relX - panX) / (rect.width * scale)) * maskCanvas.width;
-      const y = ((relY - panY) / (rect.height * scale)) * maskCanvas.height;
+      const x = ((relX - panX) / (viewportRect.width * scale)) * maskCanvas.width;
+      const y = ((relY - panY) / (viewportRect.height * scale)) * maskCanvas.height;
       return { x, y };
     }
 
@@ -428,7 +424,7 @@
 
         const response = await fetch('/.netlify/functions/generate-grillz', {
           method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image: imageB64,
             mask: maskB64,
@@ -453,9 +449,7 @@
         loadedImage.src = data.image;
 
       } catch (err) {
-        alert('SZCZEGÓŁY BŁĘDU:
-
-' + err.message);
+        alert('SZCZEGÓŁY BŁĘDU:\n\n' + err.message);
       } finally {
         generateBtn.disabled = false;
         statusText.style.display = 'none';
