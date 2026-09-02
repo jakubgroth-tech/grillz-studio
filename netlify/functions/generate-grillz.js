@@ -1,5 +1,4 @@
 exports.handler = async (event) => {
-  // Nagłówki, które mówią przeglądarce, że wynik to poprawny JSON
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*"
@@ -10,10 +9,10 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { image, material, position } = JSON.parse(event.body);
+    const { image, mask, material, position } = JSON.parse(event.body);
 
-    if (!image) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Brak zdjęcia.' }) };
+    if (!image || !mask) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Brak zdjęcia lub maski.' }) };
     }
 
     const apiKey = process.env.FAL_KEY;
@@ -21,22 +20,20 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    const materialText = material === 'gold' ? '14k gold' : '925 silver';
-    const promptText = `A close-up portrait of a person smiling, showing realistic ${materialText} grillz on ${position}, photorealistic, 8k`;
+    const promptText = `professional dental macro photography, realistic ${material} grillz jewelry fitted precisely on ${position}, shiny metallic reflections, high detail`;
 
-    // Szybkie generowanie FAL AI
-    const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
+    // Wywołanie szybkiego modelu Inpainting na fal.ai (mieści się w limicie 10s Netlify)
+    const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        image_url: image,
+        mask_url: mask,
         prompt: promptText,
-        image_url: image, 
-        image_size: "square_hd",
-        num_inference_steps: 4,
-        enable_safety_checker: false
+        strength: 0.88
       })
     });
 
@@ -51,16 +48,10 @@ exports.handler = async (event) => {
     }
 
     const resultUrl = data.images && data.images[0] ? data.images[0].url : null;
-
     if (!resultUrl) {
-      return { 
-        statusCode: 500, 
-        headers,
-        body: JSON.stringify({ error: 'Brak obrazu w odpowiedzi FAL.' }) 
-      };
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak obrazu w odpowiedzi FAL.' }) };
     }
 
-    // SUKCES: Zwracamy wygenerowany obraz
     return {
       statusCode: 200,
       headers,
