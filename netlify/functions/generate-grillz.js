@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
+const FormData = require('form-data');
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
@@ -8,10 +9,10 @@ exports.handler = async (event, context) => {
   try {
     const { image, mask, material, position } = JSON.parse(event.body);
 
-    if (!image) {
+    if (!image || !mask) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Brak zdjęcia' })
+        body: JSON.stringify({ error: 'Wymagane jest zdjęcie oraz maska' })
       };
     }
 
@@ -20,28 +21,27 @@ exports.handler = async (event, context) => {
     if (!apiKey) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Brak klucza API w zmiennych środowiskowych Netlify' })
+        body: JSON.stringify({ error: 'Brak klucza CLIPDROP_API_KEY w ustawieniach Netlify' })
       };
     }
 
-    // Zamiana Base64 na bufer
-    const imageBuffer = Buffer.from(image.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-    
-    // Tworzenie FormData dla nowego endpointu Clipdrop / Bria
-    const FormData = require('form-data');
+    // Czyszczenie i konwersja obrazów z formatu Base64 na bufory binarne
+    const imgBase64Pure = image.replace(/^data:image\/\w+;base64,/, '');
+    const maskBase64Pure = mask.replace(/^data:image\/\w+;base64,/, '');
+
+    const imgBuffer = Buffer.from(imgBase64Pure, 'base64');
+    const maskBuffer = Buffer.from(maskBase64Pure, 'base64');
+
+    // Przygotowanie formularza multipart
     const form = new FormData();
-    form.append('image_file', imageBuffer, { filename: 'image.png', contentType: 'image/png' });
+    form.append('image_file', imgBuffer, { filename: 'image.png', contentType: 'image/png' });
+    form.append('mask_file', maskBuffer, { filename: 'mask.png', contentType: 'image/png' });
+    
+    const promptText = `shiny ${material} grillz jewelry placed perfectly on teeth, ${position} teeth row, realistic 8k dental photography`;
+    form.append('prompt', promptText);
 
-    if (mask) {
-      const maskBuffer = Buffer.from(mask.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-      form.append('mask_file', maskBuffer, { filename: 'mask.png', contentType: 'image/png' });
-    }
-
-    const prompt = `realistic ${material} grillz jewelry on teeth, ${position} jaw, highly detailed, professional photography`;
-    form.append('prompt', prompt);
-
-    // Poprawiony uniwersalny endpoint Clipdrop Inpainting / Replace
-    const response = await fetch('https://clipdrop-api.co/replace-background/v1', {
+    // Wywołanie produkcyjnego endpointu Clipdrop Inpainting
+    const response = await fetch('https://clipdrop-api.co/inpainting/v1', {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
@@ -51,42 +51,25 @@ exports.handler = async (event, context) => {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      // Jeśli endpoint replace nie zadziała, próba zapasowego endpointu text-to-image/inpainting
-      const fallbackResponse = await fetch('https://clipdrop-api.co/cleanup/v1', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          ...form.getHeaders()
-        },
-        body: form
-      });
-
-      if (!fallbackResponse.ok) {
-        throw new Error(`API Error (${response.status}): ${errText}`);
-      }
-
-      const buffer = await fallbackResponse.buffer();
-      const base64Res = buffer.toString('base64');
-
+      const errorResponse = await response.text();
       return {
-        statusCode: 200,
-        body: JSON.stringify({ image: `data:image/png;base64,${base64Res}` })
+        statusCode: response.status,
+        body: JSON.stringify({ error: `Błąd Clipdrop API (${response.status}): ${errorResponse}` })
       };
     }
 
-    const buffer = await response.buffer();
-    const base64Res = buffer.toString('base64');
+    const arrayBuffer = await response.arrayBuffer();
+    const resultBase64 = Buffer.from(arrayBuffer).toString('base64');
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ image: `data:image/png;base64,${base64Res}` })
+      body: JSON.stringify({ image: `data:image/png;base64,${resultBase64}` })
     };
 
-  } catch (error) {
+  } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ error: err.message || 'Wewnętrzny błąd serwera' })
     };
   }
 };
