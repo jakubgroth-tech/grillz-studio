@@ -9,7 +9,7 @@
   <style>
     :root {
       --bg-color: #0b0c10;
-      --card-bg: rgba(22, 24, 31, 0.94);
+      --card-bg: rgba(22, 24, 31, 0.95);
       --card-border: rgba(255, 255, 255, 0.12);
       --accent-gold: #d4af37;
       --accent-gold-hover: #f3ce5a;
@@ -27,39 +27,48 @@
     .container {
       width: 100%; max-width: 440px; background: var(--card-bg);
       border: 1px solid var(--card-border); border-radius: var(--radius);
-      padding: 24px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+      padding: 28px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+      position: relative; overflow: hidden;
     }
-    .header { text-align: center; margin-bottom: 18px; }
     
-    /* Elegancki kafelek pod logo */
-    .logo-wrapper {
-      background: #ffffff;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      display: inline-block;
-      padding: 12px 24px;
-      border-radius: 14px;
-      margin-bottom: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    /* Subtle Logo Pattern Background Watermark */
+    .container::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: url('logo.png');
+      background-repeat: repeat;
+      background-size: 70px;
+      opacity: 0.025;
+      pointer-events: none;
+      z-index: 0;
     }
-    .brand-logo {
-      max-height: 40px;
-      max-width: 160px;
-      object-fit: contain;
-      display: block;
+    .container > * {
+      position: relative;
+      z-index: 1;
     }
-    .logo { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px; text-transform: uppercase; }
+
+    .header { text-align: center; margin-bottom: 22px; }
+    .logo { 
+      font-family: 'Syne', sans-serif; 
+      font-size: 26px; 
+      font-weight: 800; 
+      color: var(--accent-gold); 
+      letter-spacing: 2px; 
+      text-transform: uppercase; 
+    }
     
     .preview-box {
-      width: 100%; height: 350px; background: var(--input-bg);
+      width: 100%; min-height: 320px; background: var(--input-bg);
       border: 2px dashed var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer;
+      align-items: center; justify-content: center; margin-bottom: 12px; cursor: pointer;
     }
     .preview-box input[type="file"] {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 20;
     }
-    .upload-text { text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px; z-index: 5; }
-    .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .upload-text { text-align: center; color: var(--text-muted); font-size: 14px; padding: 20px; z-index: 5; }
+    .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 16px; margin-bottom: 4px; }
 
     .canvas-viewport {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -72,20 +81,19 @@
     }
 
     canvas {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     }
     #imageCanvas { z-index: 1; }
     #maskCanvas { z-index: 2; cursor: crosshair; }
     .canvas-container.pan-mode #maskCanvas { cursor: grab; }
     .canvas-container.pan-mode:active #maskCanvas { cursor: grabbing; }
 
-    /* Pasek narzędzi */
     .tools-bar {
-      display: flex; gap: 5px; margin-bottom: 10px; display: none;
+      display: flex; gap: 6px; margin-bottom: 12px; display: none;
     }
     .btn-tool {
       flex: 1; background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--card-border);
-      padding: 6px 4px; font-size: 10px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
+      padding: 7px 4px; font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
       transition: all 0.2s; text-align: center;
     }
     .btn-tool:hover { border-color: var(--accent-gold); color: var(--text-main); }
@@ -93,12 +101,11 @@
 
     .instructions {
       font-size: 11px; color: var(--accent-gold); text-align: center;
-      margin-bottom: 10px; display: none; background: rgba(212, 175, 55, 0.08);
+      margin-bottom: 12px; display: none; background: rgba(212, 175, 55, 0.08);
       padding: 6px; border-radius: 6px;
     }
 
-    /* Kafelki materiału */
-    .form-group { margin-bottom: 14px; }
+    .form-group { margin-bottom: 16px; }
     .label-title { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
     
     .tiles-grid {
@@ -110,7 +117,7 @@
       background: var(--input-bg);
       border: 2px solid var(--card-border);
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 12px;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -133,30 +140,27 @@
     
     .btn-submit {
       width: 100%; background: var(--accent-gold); color: #000; border: none;
-      border-radius: 10px; padding: 14px; font-family: 'Syne', sans-serif;
-      font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 4px;
-      transition: background 0.2s;
+      border-radius: 10px; padding: 15px; font-family: 'Syne', sans-serif;
+      font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 6px;
+      transition: background 0.2s; text-transform: uppercase; letter-spacing: 1px;
     }
     .btn-submit:hover { background: var(--accent-gold-hover); }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    #statusText { text-align: center; font-size: 12px; color: var(--accent-gold); margin-top: 10px; display: none; }
+    #statusText { text-align: center; font-size: 12px; color: var(--accent-gold); margin-top: 12px; display: none; }
   </style>
 </head>
 <body>
 
   <div class="container">
     <div class="header">
-      <div class="logo-wrapper">
-        <img src="logo.png" alt="Logo" class="brand-logo" onerror="this.parentElement.style.display='none'">
-      </div>
       <div class="logo">Grillz Studio</div>
     </div>
 
     <div class="preview-box" id="dropArea">
       <input type="file" id="imageInput" accept="image/*">
       <div class="upload-text" id="uploadPlaceholder">
-        <span>Wgraj zdjęcie uśmiechu</span>(Wysoka rozdzielczość)
+        <span>Wgraj zdjęcie</span>
       </div>
       
       <div class="canvas-viewport" id="canvasViewport">
@@ -167,7 +171,7 @@
       </div>
     </div>
 
-    <div class="instructions" id="hint">🖌️ Zamaluj precyzyjnie wybrane zęby pędzlem</div>
+    <div class="instructions" id="hint">🖌️ Przybliż lupą i zamaluj dokładnie wybrane zęby</div>
     
     <div class="tools-bar" id="toolsBar">
       <button type="button" class="btn-tool active-mode" id="modeDrawBtn">🖌️ Maluj</button>
@@ -198,13 +202,14 @@
       </div>
     </div>
 
-    <button type="button" class="btn-submit" id="generateBtn">Nałóż Grillz (Premium)</button>
+    <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
 
-    <div id="statusText">AI generuje fotorealistyczną biżuterię w wysokiej jakości...</div>
+    <div id="statusText">AI generuje fotorealistyczną biżuterię...</div>
   </div>
 
   <script>
     const imageInput = document.getElementById('imageInput');
+    const dropArea = document.getElementById('dropArea');
     const canvasViewport = document.getElementById('canvasViewport');
     const canvasContainer = document.getElementById('canvasContainer');
     const imageCanvas = document.getElementById('imageCanvas');
@@ -218,7 +223,7 @@
     let loadedImage = null;
     let isDrawing = false;
     let isPanning = false;
-    let currentMode = 'draw'; // 'draw' lub 'pan'
+    let currentMode = 'draw';
     let scale = 1;
     let panX = 0;
     let panY = 0;
@@ -226,7 +231,6 @@
     let startY = 0;
     let selectedMaterial = "14k shiny gold";
 
-    // Wybór materiału kafelkami
     document.querySelectorAll('.material-tile').forEach(tile => {
       tile.addEventListener('click', () => {
         document.querySelectorAll('.material-tile').forEach(t => t.classList.remove('active'));
@@ -235,7 +239,6 @@
       });
     });
 
-    // Przełączanie trybów: Maluj vs Przesuń
     const modeDrawBtn = document.getElementById('modeDrawBtn');
     const modePanBtn = document.getElementById('modePanBtn');
 
@@ -270,6 +273,11 @@
       const width = loadedImage.width;
       const height = loadedImage.height;
 
+      // Dopasowanie proporcji kontenera wgrania do proporcji zdjęcia, eliminując rozjeżdżanie kursora
+      const containerWidth = dropArea.clientWidth;
+      const calculatedHeight = containerWidth * (height / width);
+      dropArea.style.height = Math.min(Math.max(calculatedHeight, 280), 420) + 'px';
+
       imageCanvas.width = maskCanvas.width = hiddenMaskCanvas.width = width;
       imageCanvas.height = maskCanvas.height = hiddenMaskCanvas.height = height;
 
@@ -288,7 +296,6 @@
       document.getElementById('hint').style.display = 'block';
       document.getElementById('toolsBar').style.display = 'flex';
       
-      // Domyślnie tryb malowania
       currentMode = 'draw';
       modeDrawBtn.classList.add('active-mode');
       modePanBtn.classList.remove('active-mode');
@@ -310,10 +317,10 @@
       canvasViewport.style.display = 'none';
       document.getElementById('hint').style.display = 'none';
       document.getElementById('toolsBar').style.display = 'none';
+      dropArea.style.height = '320px';
       clearMasks();
     });
 
-    // Kontrola Zoomu
     document.getElementById('zoomInBtn').addEventListener('click', () => {
       scale = Math.min(scale + 0.5, 4.0);
       updateTransform();
@@ -325,27 +332,21 @@
     });
 
     function updateTransform() {
-      // Ograniczenie przesuwania w granicach obrazu
-      const maxPanX = (scale - 1) * canvasViewport.clientWidth;
-      const maxPanY = (scale - 1) * canvasViewport.clientHeight;
       if (scale === 1) { panX = 0; panY = 0; }
-      
       canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
-    // Precyzyjne mapowanie współrzędnych uwzględniające skalę i translację kontenera
+    // Precyzyjne mapowanie współrzędnych kursora uwzględniające transformacje i przesunięcia pan/zoom
     function getCanvasCoords(e) {
       const rect = maskCanvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-      // Dokładne przeskalowanie pozycji myszy względem renderowanego elementu canvas
       const x = ((clientX - rect.left) / rect.width) * maskCanvas.width;
       const y = ((clientY - rect.top) / rect.height) * maskCanvas.height;
       return { x, y };
     }
 
-    // Obsługa interakcji myszy/dotyku (Malowanie lub Przesuwanie)
     function pointerDown(e) {
       if (!loadedImage) return;
       e.preventDefault();
@@ -383,7 +384,6 @@
 
     function draw(e) {
       const pos = getCanvasCoords(e);
-      // Rozmiar pędzla dostosowany do precyzji
       const brushSize = Math.max(imageCanvas.width * 0.015, 8) / Math.sqrt(scale);
 
       maskCtx.lineWidth = brushSize;
@@ -411,7 +411,6 @@
     window.addEventListener('touchmove', pointerMove, {passive: false});
     window.addEventListener('touchend', pointerUp);
 
-    // Generowanie wizualizacji
     document.getElementById('generateBtn').addEventListener('click', async () => {
       if (!loadedImage) { alert('Wgraj zdjęcie!'); return; }
 
@@ -422,7 +421,6 @@
       statusText.style.display = 'block';
 
       try {
-        // Wysyłamy obraz w oryginalnej rozdzielczości bez kompresji
         const imageB64 = imageCanvas.toDataURL('image/jpeg', 1.0);
         const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
 
