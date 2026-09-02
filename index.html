@@ -95,8 +95,10 @@
       padding: 15px; font-family: 'Syne', sans-serif;
       font-size: 14px; font-weight: 800; letter-spacing: 1px;
       text-transform: uppercase; cursor: pointer; margin-top: 10px;
+      transition: background 0.2s ease;
     }
 
+    .btn-submit:hover { background: var(--accent-gold-hover); }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
     #statusText { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 12px; display: none; }
@@ -125,9 +127,8 @@
     <div class="form-group">
       <label for="material">Materiał</label>
       <select id="material">
-        <option value="14k gold">Złoto 14K</option>
-        <option value="925 sterling silver">Srebro 925</option>
-        <option value="diamond encrusted">Diamenty</option>
+        <option value="gold">Złoto 14K</option>
+        <option value="silver">Srebro 925</option>
       </select>
     </div>
 
@@ -136,13 +137,13 @@
       <select id="position">
         <option value="top teeth">Góra (Górny łuk)</option>
         <option value="bottom teeth">Dół (Dolny łuk)</option>
-        <option value="top and bottom teeth">Full (Góra i Dół)</option>
+        <option value="full set of teeth">Full (Góra i Dół)</option>
       </select>
     </div>
 
     <button type="button" class="btn-submit" id="generateBtn">Generuj Wizualizację</button>
 
-    <div id="statusText">Trwa generowanie przez FAL AI...</div>
+    <div id="statusText">Wykrywanie zębów i nakładanie biżuterii...</div>
 
     <div id="resultContainer">
       <label style="text-align: center; margin-bottom: 8px; display: block;">Wynik:</label>
@@ -176,6 +177,11 @@
     });
 
     generateBtn.addEventListener('click', async () => {
+      if (!base64Image) {
+        alert('Proszę najpierw wgrać zdjęcie!');
+        return;
+      }
+
       const material = document.getElementById('material').value;
       const position = document.getElementById('position').value;
 
@@ -197,13 +203,13 @@
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Błąd generowania');
+          throw new Error(data.error || 'Błąd przetwarzania');
         }
 
         resultImg.src = data.image;
         resultContainer.style.display = 'block';
       } catch (err) {
-        alert('Błąd FAL AI:\n' + err.message);
+        alert('Błąd:\n' + err.message);
       } finally {
         generateBtn.disabled = false;
         statusText.style.display = 'none';
