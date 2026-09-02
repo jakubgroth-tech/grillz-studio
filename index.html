@@ -39,7 +39,7 @@
       background-image: url('logo.png');
       background-repeat: repeat;
       background-size: 70px;
-      opacity: 0.025;
+      opacity: 0.035;
       pointer-events: none;
       z-index: 0;
     }
@@ -273,7 +273,6 @@
       const width = loadedImage.width;
       const height = loadedImage.height;
 
-      // Dopasowanie proporcji kontenera wgrania do proporcji zdjęcia, eliminując rozjeżdżanie kursora
       const containerWidth = dropArea.clientWidth;
       const calculatedHeight = containerWidth * (height / width);
       dropArea.style.height = Math.min(Math.max(calculatedHeight, 280), 420) + 'px';
@@ -336,14 +335,17 @@
       canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
-    // Precyzyjne mapowanie współrzędnych kursora uwzględniające transformacje i przesunięcia pan/zoom
     function getCanvasCoords(e) {
       const rect = maskCanvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-      const x = ((clientX - rect.left) / rect.width) * maskCanvas.width;
-      const y = ((clientY - rect.top) / rect.height) * maskCanvas.height;
+      const viewportRect = canvasViewport.getBoundingClientRect();
+      const relX = clientX - viewportRect.left;
+      const relY = clientY - viewportRect.top;
+      
+      const x = ((relX - panX) / (rect.width * scale)) * maskCanvas.width;
+      const y = ((relY - panY) / (rect.height * scale)) * maskCanvas.height;
       return { x, y };
     }
 
@@ -426,7 +428,7 @@
 
         const response = await fetch('/.netlify/functions/generate-grillz', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image: imageB64,
             mask: maskB64,
@@ -451,7 +453,9 @@
         loadedImage.src = data.image;
 
       } catch (err) {
-        alert('SZCZEGÓŁY BŁĘDU:\n\n' + err.message);
+        alert('SZCZEGÓŁY BŁĘDU:
+
+' + err.message);
       } finally {
         generateBtn.disabled = false;
         statusText.style.display = 'none';
