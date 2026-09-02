@@ -10,6 +10,7 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Brak zdjęcia' }) };
     }
 
+    // Wyłącznie Złoto 14K lub Srebro 925
     let promptMaterial = "14k polished yellow gold custom grillz caps";
     if (material && material.toLowerCase().includes("srebro")) {
       promptMaterial = "polished 925 sterling silver custom grillz caps";
@@ -19,9 +20,9 @@ exports.handler = async (event) => {
     if (position === "Górny łuk (Top)") promptPosition = "fitted on upper top teeth only";
     if (position === "Dolny łuk (Bottom)") promptPosition = "fitted on lower bottom teeth only";
 
-    const fullPrompt = `${promptMaterial} ${promptPosition}, dental jewelry, realistic metallic reflections, perfect fit on teeth`;
+    const fullPrompt = `${promptMaterial} ${promptPosition}, dental jewelry, photorealistic metallic reflections, highly detailed, perfect fit`;
 
-    // Używamy endpointu inpaintingu zamiast zwykłego image-to-image
+    // Poprawny endpoint dla inpaintingu na Fal.ai
     const response = await fetch("https://fal.run/fal-ai/flux/dev/inpainting", {
       method: "POST",
       headers: {
@@ -30,11 +31,10 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         image_url: image,
+        mask_prompt: "teeth, mouth",
         prompt: fullPrompt,
-        // Maskę na zęby (na razie wskazujemy automatyczne wykrywanie ust, w kolejnym kroku dodamy rysowanie)
-        mask_prompt: "teeth, mouth, open mouth showing teeth",
         strength: 0.85,
-        num_inference_steps: 30
+        num_inference_steps: 28
       }),
     });
 
