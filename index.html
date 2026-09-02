@@ -9,7 +9,7 @@
   <style>
     :root {
       --bg-color: #0b0c10;
-      --card-bg: rgba(22, 24, 31, 0.9);
+      --card-bg: rgba(22, 24, 31, 0.92);
       --card-border: rgba(255, 255, 255, 0.12);
       --accent-gold: #d4af37;
       --accent-gold-hover: #f3ce5a;
@@ -29,28 +29,26 @@
       border: 1px solid var(--card-border); border-radius: var(--radius);
       padding: 24px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
     }
-    .header { text-align: center; margin-bottom: 20px; }
+    .header { text-align: center; margin-bottom: 18px; }
     
-    /* Elegancka oprawa logo */
     .logo-wrapper {
-      background: #ffffff;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
       display: inline-block;
-      padding: 8px 16px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      padding: 10px 20px;
+      border-radius: 12px;
+      margin-bottom: 8px;
     }
     .brand-logo {
-      max-height: 38px;
-      max-width: 150px;
+      max-height: 36px;
+      max-width: 140px;
       object-fit: contain;
       display: block;
     }
-    .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px; }
+    .logo { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--accent-gold); letter-spacing: 1.5px; text-transform: uppercase; }
     
-    /* Sztywny kontener zapobiegający zmianom rozmiaru */
     .preview-box {
-      width: 100%; height: 360px; background: var(--input-bg);
+      width: 100%; height: 340px; background: var(--input-bg);
       border: 2px dashed var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
       align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer;
@@ -59,18 +57,16 @@
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 20;
     }
     .upload-text { text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px; z-index: 5; }
-    .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 15px; }
+    .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 15px; margin-bottom: 4px; }
 
-    /* Obszar płótna z obsługą zooma */
     .canvas-viewport {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       overflow: hidden; display: none; z-index: 10;
     }
     .canvas-container {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      transform-origin: center center; cursor: grab;
+      transform-origin: 0 0; /* Precyzyjne mapowanie współrzędnych pędzla przy zoomie */
     }
-    .canvas-container:active { cursor: grabbing; }
 
     canvas {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
@@ -78,7 +74,6 @@
     #imageCanvas { z-index: 1; }
     #maskCanvas { z-index: 2; cursor: crosshair; }
 
-    /* Pasek narzędzi zoomu i pędzla */
     .tools-bar {
       display: flex; gap: 6px; margin-bottom: 12px; display: none;
     }
@@ -95,17 +90,61 @@
       padding: 6px; border-radius: 6px;
     }
 
+    /* Kafelki wyboru materiału */
     .form-group { margin-bottom: 14px; }
-    label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
-    select {
-      width: 100%; background: var(--input-bg); border: 1px solid var(--card-border);
-      border-radius: 10px; padding: 10px 14px; color: var(--text-main); font-size: 14px; outline: none;
+    .label-title { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .tiles-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .material-tile {
+      background: var(--input-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .material-tile:hover {
+      border-color: rgba(212, 175, 55, 0.5);
+    }
+    .material-tile.active {
+      border-color: var(--accent-gold);
+      background: rgba(212, 175, 55, 0.08);
+    }
+    .tile-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+    }
+    .tile-color.gold {
+      background: linear-gradient(135deg, #f3ce5a 0%, #d4af37 50%, #aa820a 100%);
+    }
+    .tile-color.silver {
+      background: linear-gradient(135deg, #ffffff 0%, #cfd5db 50%, #8a94a0 100%);
+    }
+    .tile-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .tile-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      display: block;
     }
     
     .btn-submit {
       width: 100%; background: var(--accent-gold); color: #000; border: none;
       border-radius: 10px; padding: 14px; font-family: 'Syne', sans-serif;
-      font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 6px;
+      font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 4px;
       transition: background 0.2s;
     }
     .btn-submit:hover { background: var(--accent-gold-hover); }
@@ -138,7 +177,7 @@
       </div>
     </div>
 
-    <div class="instructions" id="hint">🖌️ Użyj lup, aby przybliżyć zęby, a następnie zamaluj je pędzlem</div>
+    <div class="instructions" id="hint">🖌️ Przybliż lupą i zamaluj dokładnie wybrane zęby</div>
     
     <div class="tools-bar" id="toolsBar">
       <button type="button" class="btn-tool" id="zoomInBtn">🔍➕ Przybliż</button>
@@ -148,11 +187,23 @@
     </div>
 
     <div class="form-group">
-      <label>Materiał</label>
-      <select id="material">
-        <option value="14k shiny gold">Złoto 14K</option>
-        <option value="925 sterling silver">Srebro 925</option>
-      </select>
+      <span class="label-title">Wybierz materiał</span>
+      <div class="tiles-grid">
+        <div class="material-tile active" data-value="14k shiny gold" id="tileGold">
+          <div class="tile-color gold"></div>
+          <div>
+            <span class="tile-text">Złoto</span>
+            <span class="tile-sub">14K Gold</span>
+          </div>
+        </div>
+        <div class="material-tile" data-value="925 sterling silver" id="tileSilver">
+          <div class="tile-color silver"></div>
+          <div>
+            <span class="tile-text">Srebro</span>
+            <span class="tile-sub">925 Silver</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <button type="button" class="btn-submit" id="generateBtn">Nałóż Grillz</button>
@@ -175,10 +226,16 @@
     let loadedImage = null;
     let isDrawing = false;
     let scale = 1;
-    let panX = 0;
-    let panY = 0;
-    let isPanning = false;
-    let startX, startY;
+    let selectedMaterial = "14k shiny gold";
+
+    // Obsługa kafelków materiału
+    document.querySelectorAll('.material-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        document.querySelectorAll('.material-tile').forEach(t => t.classList.remove('active'));
+        tile.classList.add('active');
+        selectedMaterial = tile.getAttribute('data-value');
+      });
+    });
 
     imageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -204,10 +261,7 @@
       imgCtx.drawImage(loadedImage, 0, 0);
       clearMasks();
 
-      // Reset zoomu
       scale = 1;
-      panX = 0;
-      panY = 0;
       updateTransform();
 
       document.getElementById('uploadPlaceholder').style.display = 'none';
@@ -235,34 +289,32 @@
       clearMasks();
     });
 
-    // Kontrola Zoomu (Lupa)
+    // Zoom (Lupa) z zachowaniem środka
     document.getElementById('zoomInBtn').addEventListener('click', () => {
-      scale = Math.min(scale + 0.5, 4.0);
+      scale = Math.min(scale + 0.5, 3.5);
       updateTransform();
     });
     document.getElementById('zoomOutBtn').addEventListener('click', () => {
       scale = Math.max(scale - 0.5, 1.0);
-      if (scale === 1) { panX = 0; panY = 0; }
       updateTransform();
     });
 
     function updateTransform() {
-      canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      // Skalowanie od lewego górnego rogu z translate dla wyśśrodkowania kontenera
+      canvasContainer.style.transform = `scale(${scale})`;
     }
 
     function getPos(e) {
       const rect = maskCanvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const scaleX = maskCanvas.width / rect.width;
-      const scaleY = maskCanvas.height / rect.height;
-      return { 
-        x: (clientX - rect.left) * scaleX, 
-        y: (clientY - rect.top) * scaleY 
-      };
+      
+      // Precyzyjne mapowanie uwzględniające aktualną skalę zooma i rzeczywisty rozmiar płótna
+      const x = ((clientX - rect.left) / rect.width) * maskCanvas.width;
+      const y = ((clientY - rect.top) / rect.height) * maskCanvas.height;
+      return { x, y };
     }
 
-    // Puste malowanie / przesuwanie (gdy skala > 1, przeciąganie przesuwa obrazek)
     function startDraw(e) {
       e.preventDefault();
       if (!loadedImage) return;
@@ -280,12 +332,12 @@
       if (!isDrawing) return;
       e.preventDefault();
       const pos = getPos(e);
-      // Pędzel automatycznie dopasowuje wielkość zależnie od stopnia przybliżenia
-      const brushSize = Math.max(imageCanvas.width * 0.025, 12) / scale;
+      // Pędzel automatycznie zmniejsza grubości przy przybliżeniu dla idealnej precyzji
+      const brushSize = Math.max(imageCanvas.width * 0.018, 10) / scale;
 
       maskCtx.lineWidth = brushSize;
       maskCtx.lineCap = 'round';
-      maskCtx.strokeStyle = 'rgba(212, 175, 55, 0.7)';
+      maskCtx.strokeStyle = 'rgba(212, 175, 55, 0.75)';
       maskCtx.lineTo(pos.x, pos.y);
       maskCtx.stroke();
       maskCtx.beginPath();
@@ -320,7 +372,6 @@
       try {
         const imageB64 = imageCanvas.toDataURL('image/jpeg', 0.95);
         const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
-        const material = document.getElementById('material').value;
 
         const response = await fetch('/.netlify/functions/generate-grillz', {
           method: 'POST',
@@ -328,7 +379,7 @@
           body: JSON.stringify({
             image: imageB64,
             mask: maskB64,
-            material: material
+            material: selectedMaterial
           })
         });
 
@@ -342,7 +393,6 @@
 
         if (!response.ok) throw new Error(data.error || 'Błąd generowania');
 
-        // Podmiana z zachowaniem dokładnych proporcji i wymiarów
         loadedImage = new Image();
         loadedImage.onload = () => {
           setupCanvases();
