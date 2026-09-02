@@ -7,99 +7,46 @@ exports.handler = async (event) => {
     const { image, material, position } = JSON.parse(event.body);
 
     if (!image) {
-      return { 
-        statusCode: 400, 
-        body: JSON.stringify({ error: 'Brak przesłanego zdjęcia.' }) 
-      };
+      return { statusCode: 400, body: JSON.stringify({ error: 'Brak zdjęcia.' }) };
     }
 
     const apiKey = process.env.FAL_KEY;
     if (!apiKey) {
-      return { 
-        statusCode: 500, 
-        body: JSON.stringify({ error: 'Brak klucza FAL_KEY w zmiennych Netlify.' }) 
-      };
+      return { statusCode: 500, body: JSON.stringify({ error: 'Brak klucza FAL_KEY.' }) };
     }
 
-    // Konwersja Base64 na bufer binarny
-    const base64Clean = image.replace(/^data:image\/\w+;base64,/, '');
-    const imageBuffer = Buffer.from(base64Clean, 'base64');
+    // Bezpośrednie przekazanie Base64 do szybkiego endpointu Flux Schnell z modyfikacją promptu
+    const materialText = material === 'gold' ? '14k gold' : '925 silver';
+    const promptText = `A close-up portrait of a person smiling, showing realistic ${materialText} grillz on ${position}, photorealistic, 8k`;
 
-    // 1. Inicjalizacja uploadu w CDN fal.ai za pomocą natywnego fetch()
-    const uploadInitRes = await fetch('https://rest.alpha.fal.ai/storage/upload/initiate', {
+    const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        file_name: 'input_teeth.png',
-        content_type: 'image/png'
-      })
-    });
-
-    const uploadInitData = await uploadInitRes.json();
-    
-    if (!uploadInitRes.ok) {
-      return {
-        statusCode: uploadInitRes.status,
-        body: JSON.stringify({ error: `Błąd inicjalizacji CDN FAL: ${JSON.stringify(uploadInitData)}` })
-      };
-    }
-
-    // 2. Wysłanie pliku do magazynu FAL
-    const uploadPutRes = await fetch(uploadInitData.upload_url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'image/png' },
-      body: imageBuffer
-    });
-
-    if (!uploadPutRes.ok) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Nie udało się przesłać pliku do magazynu FAL.' })
-      };
-    }
-
-    const publicImageUrl = uploadInitData.file_url;
-
-    // 3. Wywołanie modelu Inpainting z automatycznym maskowaniem zębów
-    const materialPrompt = material === 'gold' ? '14k polished gold' : '925 sterling silver';
-    const promptText = `solid metallic ${materialPrompt} grillz fitted over ${position}, hyperrealistic dental jewelry, perfectly matching smile, 8k resolution`;
-
-    const inpaintRes = await fetch('https://fal.run/fal-ai/flux-general/inpainting', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        image_url: publicImageUrl,
-        mask_prompt: "teeth, mouth, human teeth",
         prompt: promptText,
-        strength: 0.85,
-        guidance_scale: 7.5
+        image_url: image, // FAL akceptuje base64/data-uri bezpośrednio w nowszych wersjach fluxa
+        image_size: "square_hd",
+        num_inference_steps: 4,
+        enable_safety_checker: false
       })
     });
 
-    const inpaintData = await inpaintRes.json();
+    const data = await response.json();
 
-    if (!inpaintRes.ok) {
+    if (!response.ok) {
       return {
-        statusCode: inpaintRes.status,
-        body: JSON.stringify({ 
-          error: `Błąd FAL AI (${inpaintRes.status}): ${inpaintData.detail || JSON.stringify(inpaintData)}` 
-        })
+        statusCode: response.status,
+        body: JSON.stringify({ error: `FAL Error: ${data.detail || JSON.stringify(data)}` })
       };
     }
 
-    const resultUrl = inpaintData.images && inpaintData.images[0] ? inpaintData.images[0].url : null;
+    const resultUrl = data.images && data.images[0] ? data.images[0].url : null;
 
     if (!resultUrl) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Model FAL nie zwrócił obrazu.', raw: inpaintData })
-      };
+      return { statusCode: 500, body: JSON.stringify({ error: 'Brak obrazu w odpowiedzi FAL.' }) };
     }
 
     return {
@@ -110,7 +57,7 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: `Błąd kodu funkcji: ${err.message}` })
+      body: JSON.stringify({ error: `Błąd: ${err.message}` })
     };
   }
 };
