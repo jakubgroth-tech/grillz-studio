@@ -1,48 +1,67 @@
 const fetch = require('node-fetch');
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
   try {
-    const { image, prompt } = JSON.parse(event.body);
+    const { image, material, position } = JSON.parse(event.body);
 
     if (!image) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Brak zdjęcia' }) };
     }
 
-    // Wywołanie darmowego modelu Image-to-Image / Inpainting na Hugging Face
-    const response = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-refiner-1.0", {
+    // Uproszczona logika: tylko Złoto lub Srebro
+    let promptMaterial = "14k polished yellow gold custom grillz caps";
+    if (material && material.toLowerCase().includes("srebro")) {
+      promptMaterial = "925 sterling silver custom grillz caps";
+    }
+
+    let promptPosition = "on teeth";
+    if (position === "Górny łuk (Top)") promptPosition = "fitted on upper top teeth only";
+    if (position === "Dolny łuk (Bottom)") promptPosition = "fitted on lower bottom teeth only";
+
+    const fullPrompt = `photorealistic ${promptMaterial} ${promptPosition}, dental jewelry, perfect fit, professional dental photography, 8k resolution, highly detailed, realistic reflection, preserving original lips and face`;
+
+    // Wywołanie modelu Fal.ai FLUX
+    const response = await fetch("https://fal.run/fal-ai/flux/dev/image-to-image", {
+      method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.HF_TOKEN}`,
+        "Authorization": `Key ${process.env.FAL_KEY}`,
         "Content-Type": "application/json",
       },
-      method: "POST",
       body: JSON.stringify({
-        inputs: prompt || "photorealistic custom dental gold grillz jewelry on teeth, high quality",
-        parameters: {
-          image: image
-        }
+        image_url: image,
+        prompt: fullPrompt,
+        strength: 0.65,
+        guidance_scale: 7.5,
+        num_inference_steps: 28
       }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const errorText = await response.text();
       return {
         statusCode: response.status,
-        body: JSON.stringify({ error: `Błąd HF: ${errorText}` })
+        body: JSON.stringify({ error: data.detail || data.message || "Błąd API Fal.ai" })
       };
     }
 
-    const buffer = await response.arrayBuffer();
-    const base64Image = Buffer.from(buffer).toString('base64');
-    const imageSrc = `data:image/jpeg;base64,${base64Image}`;
+    const generatedImageUrl = data.images && data.images[0] ? data.images[0].url : null;
+
+    if (!generatedImageUrl) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Nie udało się wygenerować obrazu." })
+      };
+    }
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: imageSrc })
+      body: JSON.stringify({ image: generatedImageUrl })
     };
 
   } catch (error) {
