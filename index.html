@@ -1,377 +1,4 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GRILLZ STUDIO — Virtual Try-On</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-color: #0b0c10;
-      --card-bg: rgba(22, 24, 31, 0.75);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --accent-gold: #d4af37;
-      --accent-gold-glow: rgba(212, 175, 55, 0.25);
-      --accent-gold-hover: #f3ce5a;
-      --text-main: #f0f2f5;
-      --text-muted: #8a8f9e;
-      --input-bg: rgba(12, 13, 17, 0.8);
-      --radius-lg: 20px;
-      --radius-md: 12px;
-      --font-heading: 'Syne', sans-serif;
-      --font-body: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      background-image: 
-        radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
-        radial-gradient(circle at 80% 100%, rgba(255, 255, 255, 0.03) 0%, transparent 40%);
-      color: var(--text-main);
-      font-family: var(--font-body);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 480px;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      padding: 32px 24px;
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-
-    .logo {
-      font-family: var(--font-heading);
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      background: linear-gradient(135deg, #ffffff 30%, var(--accent-gold) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 6px;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 400;
-      letter-spacing: 0.5px;
-    }
-
-    /* Dropzone & Canvas Area */
-    .viewport-box {
-      width: 100%;
-      aspect-ratio: 4/5;
-      background: var(--input-bg);
-      border: 2px dashed var(--card-border);
-      border-radius: var(--radius-md);
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-bottom: 12px;
-    }
-
-    .viewport-box:hover {
-      border-color: var(--accent-gold);
-      box-shadow: 0 0 20px var(--accent-gold-glow);
-    }
-
-    .viewport-box input[type="file"] {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-      z-index: 10;
-    }
-
-    .upload-placeholder {
-      text-align: center;
-      padding: 20px;
-      pointer-events: none;
-    }
-
-    .upload-icon {
-      width: 48px;
-      height: 48px;
-      margin-bottom: 12px;
-      fill: var(--accent-gold);
-      opacity: 0.8;
-    }
-
-    .upload-text {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 4px;
-    }
-
-    .upload-sub {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    /* Interactive Canvas Overlay */
-    .canvas-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-    }
-
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      touch-action: none;
-    }
-
-    #imageCanvas {
-      z-index: 1;
-    }
-
-    #maskCanvas {
-      z-index: 2;
-      opacity: 0.7;
-    }
-
-    /* Controls Bar above Image when uploaded */
-    .canvas-tools {
-      position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 15;
-      display: none;
-      background: rgba(11, 12, 16, 0.85);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--card-border);
-      border-radius: 30px;
-      padding: 6px 12px;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .tool-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-main);
-      font-size: 12px;
-      font-weight: 600;
-      padding: 6px 10px;
-      border-radius: 20px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tool-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Form Controls */
-    .form-group {
-      margin-bottom: 18px;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-    }
-
-    .select-custom {
-      width: 100%;
-      background: var(--input-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-md);
-      padding: 14px 16px;
-      color: var(--text-main);
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 500;
-      outline: none;
-      cursor: pointer;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%20%238a8f9e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 16px center;
-      transition: border-color 0.2s ease;
-    }
-
-    .select-custom:focus {
-      border-color: var(--accent-gold);
-    }
-
-    /* Main Action Button */
-    .btn-submit {
-      width: 100%;
-      background: linear-gradient(135deg, var(--accent-gold) 0%, #b89228 100%);
-      color: #0b0c10;
-      border: none;
-      border-radius: var(--radius-md);
-      padding: 16px;
-      font-family: var(--font-heading);
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 10px 20px var(--accent-gold-glow);
-      margin-top: 10px;
-    }
-
-    .btn-submit:hover {
-      background: linear-gradient(135deg, var(--accent-gold-hover) 0%, var(--accent-gold) 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 14px 28px rgba(212, 175, 55, 0.35);
-    }
-
-    .btn-submit:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* Result & Status Display */
-    .status-box {
-      margin-top: 16px;
-      font-size: 13px;
-      text-align: center;
-      color: var(--text-muted);
-      display: none;
-    }
-
-    .result-box {
-      margin-top: 24px;
-      display: none;
-    }
-
-    .result-img {
-      width: 100%;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--accent-gold);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    .instructions {
-      font-size: 12px;
-      color: var(--accent-gold);
-      text-align: center;
-      margin-bottom: 18px;
-      line-height: 1.4;
-      background: rgba(212, 175, 55, 0.08);
-      padding: 8px 12px;
-      border-radius: 8px;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="container">
-    <div class="header">
-      <div class="logo">Grillz Studio</div>
-      <div class="subtitle">AI Virtual Fitting Room</div>
-    </div>
-
-    <!-- Upload & Interactive Drawing Area -->
-    <div class="viewport-box" id="dropArea">
-      <input type="file" id="imageInput" accept="image/*">
-      
-      <div class="upload-placeholder" id="placeholder">
-        <svg class="upload-icon" viewBox="0 0 24 24">
-          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-        </svg>
-        <div class="upload-text">Wgraj zdjęcie uśmiechu</div>
-        <div class="upload-sub">Kliknij lub przeciągnij plik tutaj</div>
-      </div>
-
-      <div class="canvas-container" id="canvasContainer">
-        <canvas id="imageCanvas"></canvas>
-        <canvas id="maskCanvas"></canvas>
-      </div>
-
-      <div class="canvas-tools" id="canvasTools">
-        <button type="button" class="tool-btn" id="clearMaskBtn">
-          <span>↺</span> Wyczyść pędzel
-        </button>
-      </div>
-    </div>
-
-    <div class="instructions" id="drawHint" style="display: none;">
-      ✏️ <strong>Zaznacz pędzlem same zęby</strong> na zdjęciu.
-    </div>
-
-    <!-- Options Form -->
-    <div class="form-group">
-      <label class="form-label" for="material">Materiał</label>
-      <select id="material" class="select-custom">
-        <option value="Złoto 14K">Złoto 14K</option>
-        <option value="Srebro 925">Srebro 925</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label" for="position">Pozycja</label>
-      <select id="position" class="select-custom">
-        <option value="Góra">Góra (Górny łuk)</option>
-        <option value="Dół">Dół (Dolny łuk)</option>
-        <option value="Full">Full (Góra i Dół)</option>
-      </select>
-    </div>
-
-    <button type="button" class="btn-submit" id="generateBtn">Generuj Wizualizację</button>
-
-    <div class="status-box" id="statusText">Trwa generowanie biżuterii przez AI...</div>
-
-    <!-- Result Display -->
-    <div class="result-box" id="resultContainer">
-      <div class="form-label" style="text-align: center; margin-bottom: 12px;">Twój Wynik:</div>
-      <img id="resultImage" class="result-img" src="" alt="Wygenerowany Grillz">
-    </div>
-  </div>
-
-  <script>
+<script>
     const imageInput = document.getElementById('imageInput');
     const placeholder = document.getElementById('placeholder');
     const canvasContainer = document.getElementById('canvasContainer');
@@ -391,7 +18,6 @@
     let loadedImage = null;
     let isDrawing = false;
 
-    // Handle File Upload
     imageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -400,7 +26,14 @@
       reader.onload = (event) => {
         loadedImage = new Image();
         loadedImage.onload = () => {
-          setupCanvases();
+          // Pokaż kontener najpierw, aby pobrać realne wymiary z DOM
+          placeholder.style.display = 'none';
+          canvasContainer.style.display = 'block';
+          canvasTools.style.display = 'flex';
+          drawHint.style.display = 'block';
+
+          // Krótkie opóźnienie, aby przeglądarka przeliczyła CSS kontenera
+          setTimeout(setupCanvases, 50);
         };
         loadedImage.src = event.target.result;
       };
@@ -408,9 +41,9 @@
     });
 
     function setupCanvases() {
-      const rect = imageCanvas.parentElement.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
+      const container = document.getElementById('dropArea');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
 
       imageCanvas.width = width;
       imageCanvas.height = height;
@@ -418,27 +51,15 @@
       maskCanvas.height = height;
 
       imgCtx.clearRect(0, 0, width, height);
-      
-      const hRatio = width / loadedImage.width;
-      const vRatio = height / loadedImage.height;
-      const ratio = Math.min(hRatio, vRatio);
-      
-      const centerShift_x = (width - loadedImage.width * ratio) / 2;
-      const centerShift_y = (height - loadedImage.height * ratio) / 2;
 
-      imgCtx.drawImage(
-        loadedImage, 
-        0, 0, loadedImage.width, loadedImage.height,
-        centerShift_x, centerShift_y, loadedImage.width * ratio, loadedImage.height * ratio
-      );
+      // Obliczanie proporcji, aby zdjęcie wypełniło kontener
+      const scale = Math.min(width / loadedImage.width, height / loadedImage.height);
+      const x = (width / 2) - (loadedImage.width / 2) * scale;
+      const y = (height / 2) - (loadedImage.height / 2) * scale;
+
+      imgCtx.drawImage(loadedImage, x, y, loadedImage.width * scale, loadedImage.height * scale);
 
       clearMask();
-
-      placeholder.style.display = 'none';
-      canvasContainer.style.display = 'block';
-      canvasTools.style.display = 'flex';
-      drawHint.style.display = 'block';
-      imageInput.style.display = 'none';
     }
 
     function clearMask() {
@@ -472,7 +93,7 @@
       if (!isDrawing || !loadedImage) return;
       const pos = getPos(e);
 
-      maskCtx.lineWidth = 22;
+      maskCtx.lineWidth = 20;
       maskCtx.lineCap = 'round';
       maskCtx.lineJoin = 'round';
       maskCtx.strokeStyle = 'rgba(212, 175, 55, 0.85)';
@@ -559,5 +180,3 @@
       }
     });
   </script>
-</body>
-</html>
