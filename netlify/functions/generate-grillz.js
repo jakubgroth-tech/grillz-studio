@@ -1,4 +1,3 @@
-
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
@@ -11,20 +10,19 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Brak zdjęcia' }) };
     }
 
-    // Uproszczona logika: tylko Złoto lub Srebro
     let promptMaterial = "14k polished yellow gold custom grillz caps";
     if (material && material.toLowerCase().includes("srebro")) {
-      promptMaterial = "925 sterling silver custom grillz caps";
+      promptMaterial = "polished 925 sterling silver custom grillz caps";
     }
 
     let promptPosition = "on teeth";
     if (position === "Górny łuk (Top)") promptPosition = "fitted on upper top teeth only";
     if (position === "Dolny łuk (Bottom)") promptPosition = "fitted on lower bottom teeth only";
 
-    const fullPrompt = `photorealistic ${promptMaterial} ${promptPosition}, dental jewelry, perfect fit, professional dental photography, 8k resolution, highly detailed, realistic reflection, preserving original lips and face`;
+    const fullPrompt = `${promptMaterial} ${promptPosition}, dental jewelry, realistic metallic reflections, perfect fit on teeth`;
 
-    // Wywołanie modelu Fal.ai FLUX
-    const response = await fetch("https://fal.run/fal-ai/flux/dev/image-to-image", {
+    // Używamy endpointu inpaintingu zamiast zwykłego image-to-image
+    const response = await fetch("https://fal.run/fal-ai/flux/dev/inpainting", {
       method: "POST",
       headers: {
         "Authorization": `Key ${process.env.FAL_KEY}`,
@@ -33,9 +31,10 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         image_url: image,
         prompt: fullPrompt,
-        strength: 0.65,
-        guidance_scale: 7.5,
-        num_inference_steps: 28
+        // Maskę na zęby (na razie wskazujemy automatyczne wykrywanie ust, w kolejnym kroku dodamy rysowanie)
+        mask_prompt: "teeth, mouth, open mouth showing teeth",
+        strength: 0.85,
+        num_inference_steps: 30
       }),
     });
 
