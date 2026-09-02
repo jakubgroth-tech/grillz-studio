@@ -33,11 +33,10 @@
     .logo { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--accent-gold); }
     
     .preview-box {
-      width: 100%; background: var(--input-bg);
+      width: 100%; height: 340px; background: var(--input-bg);
       border: 2px dashed var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
       align-items: center; justify-content: center; margin-bottom: 12px; cursor: pointer;
-      min-height: 300px;
     }
     .preview-box input[type="file"] {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;
@@ -45,15 +44,27 @@
     .upload-text { text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px; }
     .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 15px; }
 
-    canvas { max-width: 100%; height: auto; display: none; display: block; }
+    canvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none;
+    }
     #imageCanvas { z-index: 1; }
-    #maskCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; cursor: crosshair; display: none; }
+    #maskCanvas { z-index: 2; cursor: crosshair; }
 
     .instructions {
       font-size: 12px; color: var(--accent-gold); text-align: center;
-      margin-bottom: 16px; display: none; background: rgba(212, 175, 55, 0.1);
+      margin-bottom: 12px; display: none; background: rgba(212, 175, 55, 0.1);
       padding: 8px; border-radius: 8px;
     }
+
+    .action-row {
+      display: flex; gap: 8px; margin-bottom: 16px; display: none;
+    }
+    .btn-tool {
+      flex: 1; background: transparent; color: var(--text-muted); border: 1px solid var(--card-border);
+      padding: 8px; font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .btn-tool:hover { border-color: var(--accent-gold); color: var(--text-main); }
 
     .form-group { margin-bottom: 16px; }
     label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
@@ -69,11 +80,6 @@
     }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    #clearBtn {
-      background: transparent; color: var(--text-muted); border: 1px solid var(--card-border);
-      padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; margin: 0 auto 16px auto; display: none;
-    }
-
     #statusText { text-align: center; font-size: 12px; color: var(--accent-gold); margin-top: 12px; display: none; }
   </style>
 </head>
@@ -87,14 +93,18 @@
     <div class="preview-box" id="dropArea">
       <input type="file" id="imageInput" accept="image/*">
       <div class="upload-text" id="uploadPlaceholder">
-        <span>Wgraj zdjęcie uśmiechu</span>(Format zostanie zachowany 1:1)
+        <span>Wgraj zdjęcie uśmiechu</span>(Twarz na wprost)
       </div>
       <canvas id="imageCanvas"></canvas>
       <canvas id="maskCanvas"></canvas>
     </div>
 
-    <div class="instructions" id="hint">🖌️ Zamaluj pędzlem wyłącznie zęby</div>
-    <button type="button" id="clearBtn">Wyczyść pędzel</button>
+    <div class="instructions" id="hint">🖌️ Zamaluj pędzlem dokładnie te zęby, na których chcesz grillz</div>
+    
+    <div class="action-row" id="actionRow">
+      <button type="button" class="btn-tool" id="clearBtn">Wyczyść pędzel</button>
+      <button type="button" class="btn-tool" id="resetBtn">Wgraj inne zdjęcie</button>
+    </div>
 
     <div class="form-group">
       <label>Materiał</label>
@@ -104,18 +114,9 @@
       </select>
     </div>
 
-    <div class="form-group">
-      <label>Pozycja</label>
-      <select id="position">
-        <option value="top teeth">Góra (Górny łuk)</option>
-        <option value="bottom teeth">Dół (Dolny łuk)</option>
-        <option value="full set of teeth">Full (Góra i Dół)</option>
-      </select>
-    </div>
-
     <button type="button" class="btn-submit" id="generateBtn">Nałóż Grillz</button>
 
-    <div id="statusText">AI precyzyjnie dopasowuje biżuterię...</div>
+    <div id="statusText">AI dopasowuje biżuterię do zaznaczenia...</div>
   </div>
 
   <script>
@@ -145,13 +146,13 @@
     });
 
     function setupCanvases() {
-      // Ustawiamy canvas dokładnie w proporcjach wgranego zdjęcia (zero deformacji)
       const width = loadedImage.width;
       const height = loadedImage.height;
 
       imageCanvas.width = maskCanvas.width = hiddenMaskCanvas.width = width;
       imageCanvas.height = maskCanvas.height = hiddenMaskCanvas.height = height;
 
+      imgCtx.clearRect(0, 0, width, height);
       imgCtx.drawImage(loadedImage, 0, 0);
       clearMasks();
 
@@ -160,7 +161,7 @@
       imageCanvas.style.display = 'block';
       maskCanvas.style.display = 'block';
       document.getElementById('hint').style.display = 'block';
-      document.getElementById('clearBtn').style.display = 'block';
+      document.getElementById('actionRow').style.display = 'flex';
     }
 
     function clearMasks() {
@@ -170,11 +171,22 @@
     }
     document.getElementById('clearBtn').addEventListener('click', clearMasks);
 
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      loadedImage = null;
+      imageInput.value = '';
+      imageInput.style.display = 'block';
+      document.getElementById('uploadPlaceholder').style.display = 'block';
+      imageCanvas.style.display = 'none';
+      maskCanvas.style.display = 'none';
+      document.getElementById('hint').style.display = 'none';
+      document.getElementById('actionRow').style.display = 'none';
+      clearMasks();
+    });
+
     function getPos(e) {
       const rect = maskCanvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      // Przelicznik pozycji myszy/palca względem oryginalnej rozdzielczości zdjęcia
       const scaleX = maskCanvas.width / rect.width;
       const scaleY = maskCanvas.height / rect.height;
       return { 
@@ -190,7 +202,7 @@
       if (!isDrawing) return;
       e.preventDefault();
       const pos = getPos(e);
-      const brushSize = Math.max(imageCanvas.width * 0.03, 15); // Dynamiczny rozmiar pędzla
+      const brushSize = Math.max(imageCanvas.width * 0.03, 15);
 
       maskCtx.lineWidth = brushSize;
       maskCtx.lineCap = 'round';
@@ -230,7 +242,6 @@
         const imageB64 = imageCanvas.toDataURL('image/jpeg', 0.95);
         const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
         const material = document.getElementById('material').value;
-        const position = document.getElementById('position').value;
 
         const response = await fetch('/.netlify/functions/generate-grillz', {
           method: 'POST',
@@ -238,8 +249,7 @@
           body: JSON.stringify({
             image: imageB64,
             mask: maskB64,
-            material: material,
-            position: position
+            material: material
           })
         });
 
@@ -253,11 +263,9 @@
 
         if (!response.ok) throw new Error(data.error || 'Błąd generowania');
 
-        // PODMIANA W MIEJSCU: Wynik ładuje się bezpośrednio do głównego podglądu
         loadedImage = new Image();
         loadedImage.onload = () => {
           setupCanvases();
-          // Po załadowaniu nowego zdjęcia ukrywamy pędzel, pokazując gotowy efekt
           maskCanvas.style.display = 'none';
           document.getElementById('hint').style.display = 'none';
           document.getElementById('clearBtn').style.display = 'none';
