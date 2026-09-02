@@ -9,7 +9,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { image, mask, material, position } = JSON.parse(event.body);
+    const { image, mask, material } = JSON.parse(event.body);
 
     if (!image || !mask) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Brak zdjęcia lub maski.' }) };
@@ -20,17 +20,7 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    // Precyzyjne sterowanie modelem w zależności od wyboru użytkownika
-    let positionInstruction = "fitted on teeth";
-    if (position === 'top teeth') {
-      positionInstruction = "fitted strictly and exclusively on the UPPER teeth row only. Leave the bottom teeth completely untouched and natural.";
-    } else if (position === 'bottom teeth') {
-      positionInstruction = "fitted strictly and exclusively on the LOWER teeth row only. Leave the upper teeth completely untouched and natural.";
-    } else if (position === 'full set of teeth') {
-      positionInstruction = "fitted on both upper and lower teeth rows.";
-    }
-
-    const promptText = `High-end luxury jewelry macro photography. Solid ${material} grillz caps ${positionInstruction}, realistic metallic mirror reflections, seamless precise fit over human teeth, keeping skin, face, lips, and background 100% untouched.`;
+    const promptText = `High-end luxury jewelry macro photography. Solid ${material} grillz caps fitted precisely and strictly inside the painted mask area, realistic metallic mirror reflections, seamless precise fit over human teeth, keeping skin, lips, face, and background 100% identical to the original image.`;
 
     const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
       method: 'POST',
@@ -43,7 +33,7 @@ exports.handler = async (event) => {
         mask_url: mask,
         prompt: promptText,
         strength: 0.92,
-        guidance_scale: 8.0
+        guidance_scale: 8.5
       })
     });
 
