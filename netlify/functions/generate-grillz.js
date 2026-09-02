@@ -24,11 +24,14 @@ exports.handler = async (event) => {
       };
     }
 
-    // -------------------------------------------------------------
-    // ETAP 1: DETEKCJA I SEGMENTACJA ZĘBÓW (SAM2 Model)
-    // Awaryjnie wywołujemy model detekcji do wygenerowania czystej maski
-    // -------------------------------------------------------------
-    const maskResponse = await fetch('https://fal.run/fal-ai/sam2/image', {
+    // Określenie wybranego wykończenia
+    const materialPrompt = material === 'gold' ? '14k shiny gold' : '925 polished silver';
+    
+    // Budowa precyzyjnego promptu dla zębów
+    const promptText = `custom ${materialPrompt} grillz jewelry cap on ${position}, photorealistic metallic texture, high detailed dental jewelry fit`;
+
+    // Wywołanie modelu Inpainting z automatycznym maskowaniem na fal.ai
+    const response = await fetch('https://fal.run/fal-ai/flux-general/inpainting', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -36,64 +39,31 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         image_url: image,
-        prompts: [{ type: "text", text: "teeth mouth" }]
+        mask_prompt: "teeth, mouth, smile", // Model sam automatycznie wykrywa zęby i wycina z nich maskę
+        prompt: promptText,
+        strength: 0.85,
+        guidance_scale: 7.5
       })
     });
 
-    let maskUrl = null;
-    if (maskResponse.ok) {
-      const maskData = await maskResponse.json();
-      maskUrl = maskData.image_url || (maskData.masks && maskData.masks[0] ? maskData.masks[0].url : null);
-    }
+    const data = await response.json();
 
-    // -------------------------------------------------------------
-    // ETAP 2: INPAINTING (Modyfikacja TYLKO zębów na zdjęciu)
-    // Jeśli maska z SAM2 nie powstała, wywołujemy wbudowany Inpainting z tekstem detekcji
-    // -------------------------------------------------------------
-    const materialPrompt = material === 'gold' ? 'shiny polished 14k gold' : 'metallic 925 sterling silver';
-    const promptText = `solid ${materialPrompt} grillz caps fitted perfectly over ${position}, realistic metallic sheen, detailed dental jewelry`;
-
-    const inpaintBody = maskUrl ? {
-      image_url: image,
-      mask_url: maskUrl,
-      prompt: promptText,
-      strength: 0.9,
-      guidance_scale: 7.5
-    } : {
-      image_url: image,
-      mask_prompt: "human teeth, smile, mouth",
-      prompt: promptText,
-      strength: 0.9,
-      guidance_scale: 7.5
-    };
-
-    const inpaintResponse = await fetch('https://fal.run/fal-ai/flux/dev/inpainting', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(inpaintBody)
-    });
-
-    const inpaintData = await inpaintResponse.json();
-
-    if (!inpaintResponse.ok) {
+    if (!response.ok) {
       return {
-        statusCode: inpaintResponse.status,
-        body: JSON.stringify({ error: `Błąd FAL Inpainting: ${inpaintData.detail || JSON.stringify(inpaintData)}` })
+        statusCode: response.status,
+        body: JSON.stringify({ error: `Błąd FAL API (${response.status}): ${data.detail || JSON.stringify(data)}` })
       };
     }
 
-    const finalResultUrl = inpaintData.images && inpaintData.images[0] ? inpaintData.images[0].url : null;
+    const resultUrl = data.images && data.images[0] ? data.images[0].url : null;
 
-    if (!finalResultUrl) {
-      throw new Error('API fal.ai nie zwróciło przetworzonego obrazu.');
+    if (!resultUrl) {
+      throw new Error('API nie zwróciło przetworzonego obrazu.');
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ image: finalResultUrl })
+      body: JSON.stringify({ image: resultUrl })
     };
 
   } catch (err) {
