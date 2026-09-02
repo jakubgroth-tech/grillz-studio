@@ -55,7 +55,7 @@
     }
     
     .preview-box {
-      width: 100%; min-height: 320px; background: var(--input-bg);
+      width: 100%; height: 340px; background: var(--input-bg);
       border: 2px dashed var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
       align-items: center; justify-content: center; margin-bottom: 12px; cursor: pointer;
@@ -74,13 +74,23 @@
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       transform-origin: 0 0;
       touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    canvas {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    #previewImageElement {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
     }
-    #imageCanvas { z-index: 1; }
-    #maskCanvas { z-index: 2; cursor: crosshair; }
+
+    #maskCanvas {
+      position: absolute;
+      cursor: crosshair;
+    }
     .canvas-container.pan-mode #maskCanvas { cursor: grab; }
     .canvas-container.pan-mode:active #maskCanvas { cursor: grabbing; }
 
@@ -161,7 +171,7 @@
       
       <div class="canvas-viewport" id="canvasViewport">
         <div class="canvas-container" id="canvasContainer">
-          <canvas id="imageCanvas"></canvas>
+          <img id="previewImageElement" alt="Podgląd">
           <canvas id="maskCanvas"></canvas>
         </div>
       </div>
@@ -208,11 +218,12 @@
     const dropArea = document.getElementById('dropArea');
     const canvasViewport = document.getElementById('canvasViewport');
     const canvasContainer = document.getElementById('canvasContainer');
-    const imageCanvas = document.getElementById('imageCanvas');
+    const previewImageElement = document.getElementById('previewImageElement');
     const maskCanvas = document.getElementById('maskCanvas');
-    const imgCtx = imageCanvas.getContext('2d');
     const maskCtx = maskCanvas.getContext('2d');
     
+    const hiddenImageCanvas = document.createElement('canvas');
+    const hiddenImgCtx = hiddenImageCanvas.getContext('2d');
     const hiddenMaskCanvas = document.createElement('canvas');
     const hiddenMaskCtx = hiddenMaskCanvas.getContext('2d');
 
@@ -258,27 +269,55 @@
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        loadedImage = new Image();
-        loadedImage.onload = setupCanvases;
-        loadedImage.src = event.target.result;
+        const img = new Image();
+        img.onload = () => {
+          // Automatyczne skalowanie wielkich zdjęć z telefonu do bezpiecznego limitu Netlify (max 1280px)
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1280;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          hiddenImageCanvas.width = hiddenMaskCanvas.width = width;
+          hiddenImageCanvas.height = hiddenMaskCanvas.height = height;
+
+          hiddenImgCtx.clearRect(0, 0, width, height);
+          hiddenImgCtx.drawImage(img, 0, 0, width, height);
+          
+          loadedImage = new Image();
+          loadedImage.onload = setupViewer;
+          loadedImage.src = hiddenImageCanvas.toDataURL('image/jpeg', 0.9);
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     });
 
-    function setupCanvases() {
-      const width = loadedImage.width;
-      const height = loadedImage.height;
+    function setupViewer() {
+      const width = hiddenImageCanvas.width;
+      const height = hiddenImageCanvas.height;
 
-      const containerWidth = dropArea.clientWidth;
-      const calculatedHeight = containerWidth * (height / width);
-      dropArea.style.height = Math.min(Math.max(calculatedHeight, 280), 420) + 'px';
+      hiddenMaskCtx.fillStyle = '#000000';
+      hiddenMaskCtx.fillRect(0, 0, width, height);
+      maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
 
-      imageCanvas.width = maskCanvas.width = hiddenMaskCanvas.width = width;
-      imageCanvas.height = maskCanvas.height = hiddenMaskCanvas.height = height;
-
-      imgCtx.clearRect(0, 0, width, height);
-      imgCtx.drawImage(loadedImage, 0, 0);
-      clearMasks();
+      previewImageElement.src = loadedImage.src;
+      
+      setTimeout(() => {
+        const rect = previewImageElement.getBoundingClientRect();
+        if (rect.width > 0) {
+          maskCanvas.width = rect.width;
+          maskCanvas.height = rect.height;
+        }
+      }, 50);
 
       scale = 1;
       panX = 0;
@@ -302,6 +341,7 @@
       hiddenMaskCtx.fillStyle = '#000000';
       hiddenMaskCtx.fillRect(0, 0, hiddenMaskCanvas.width, hiddenMaskCanvas.height);
     }
+    
     document.getElementById('clearBtn').addEventListener('click', clearMasks);
 
     document.getElementById('resetBtn').addEventListener('click', () => {
@@ -312,7 +352,6 @@
       canvasViewport.style.display = 'none';
       document.getElementById('hint').style.display = 'none';
       document.getElementById('toolsBar').style.display = 'none';
-      dropArea.style.height = '320px';
       clearMasks();
     });
 
@@ -331,17 +370,22 @@
       canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
-    // 100% precyzyjne mapowanie współrzędnych pędzla uwzględniające pan i zoom
+    window.addEventListener('resize', () => {
+      if (!loadedImage) return;
+      const rect = previewImageElement.getBoundingClientRect();
+      if (rect.width > 0) {
+        maskCanvas.width = rect.width;
+        maskCanvas.height = rect.height;
+      }
+    });
+
     function getCanvasCoords(e) {
+      const rect = maskCanvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-      const viewportRect = canvasViewport.getBoundingClientRect();
-      const relX = clientX - viewportRect.left;
-      const relY = clientY - viewportRect.top;
-      
-      const x = ((relX - panX) / (viewportRect.width * scale)) * maskCanvas.width;
-      const y = ((relY - panY) / (viewportRect.height * scale)) * maskCanvas.height;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
       return { x, y };
     }
 
@@ -382,7 +426,7 @@
 
     function draw(e) {
       const pos = getCanvasCoords(e);
-      const brushSize = Math.max(imageCanvas.width * 0.015, 8) / Math.sqrt(scale);
+      const brushSize = Math.max(maskCanvas.width * 0.02, 10) / Math.sqrt(scale);
 
       maskCtx.lineWidth = brushSize;
       maskCtx.lineCap = 'round';
@@ -392,13 +436,19 @@
       maskCtx.beginPath();
       maskCtx.moveTo(pos.x, pos.y);
 
-      hiddenMaskCtx.lineWidth = brushSize;
+      const scaleX = hiddenMaskCanvas.width / maskCanvas.width;
+      const scaleY = hiddenMaskCanvas.height / maskCanvas.height;
+      const hiddenX = pos.x * scaleX;
+      const hiddenY = pos.y * scaleY;
+      const hiddenBrushSize = brushSize * scaleX;
+
+      hiddenMaskCtx.lineWidth = hiddenBrushSize;
       hiddenMaskCtx.lineCap = 'round';
       hiddenMaskCtx.strokeStyle = '#FFFFFF';
-      hiddenMaskCtx.lineTo(pos.x, pos.y);
+      hiddenMaskCtx.lineTo(hiddenX, hiddenY);
       hiddenMaskCtx.stroke();
       hiddenMaskCtx.beginPath();
-      hiddenMaskCtx.moveTo(pos.x, pos.y);
+      hiddenMaskCtx.moveTo(hiddenX, hiddenY);
     }
 
     maskCanvas.addEventListener('mousedown', pointerDown);
@@ -419,7 +469,7 @@
       statusText.style.display = 'block';
 
       try {
-        const imageB64 = imageCanvas.toDataURL('image/jpeg', 1.0);
+        const imageB64 = hiddenImageCanvas.toDataURL('image/jpeg', 0.88);
         const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
 
         const response = await fetch('/.netlify/functions/generate-grillz', {
@@ -444,7 +494,7 @@
 
         loadedImage = new Image();
         loadedImage.onload = () => {
-          setupCanvases();
+          setupViewer();
         };
         loadedImage.src = data.image;
 
