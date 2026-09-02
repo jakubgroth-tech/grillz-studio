@@ -1,57 +1,86 @@
-exports.handler = async (event) => {
+const fetch = require('node-fetch');
+
+exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   try {
     const { image, mask, material, position } = JSON.parse(event.body);
 
-    if (!image || !mask) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Brak zdjęcia lub maski' }) };
-    }
-
-    let promptMaterial = "14k polished yellow gold grillz caps";
-    if (material && material.toLowerCase().includes("srebro")) {
-      promptMaterial = "polished 925 sterling silver grillz caps";
-    }
-
-    let promptPosition = "fitted on teeth";
-    if (position === "Góra") promptPosition = "fitted strictly on top teeth row";
-    if (position === "Dół") promptPosition = "fitted strictly on bottom teeth row";
-
-    const fullPrompt = `${promptMaterial} ${promptPosition}, high polish metal jewelry, perfectly fitted on teeth, realistic reflection`;
-
-    const response = await fetch("https://fal.run/fal-ai/flux/dev/inpainting", {
-      method: "POST",
-      headers: {
-        "Authorization": `Key ${process.env.FAL_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        image_url: image,
-        mask_url: mask,
-        prompt: fullPrompt,
-        strength: 0.85,
-        guidance_scale: 3.5,
-        num_inference_steps: 25
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
+    if (!image) {
       return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: data.detail || data.message || "Błąd API Fal.ai" })
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Brak zdjęcia' })
       };
     }
 
-    const generatedImageUrl = data.images && data.images[0] ? data.images[0].url : null;
+    const apiKey = process.env.CLIPDROP_API_KEY || process.env.BRIA_API_KEY;
+
+    if (!apiKey) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Brak klucza API w zmiennych środowiskowych Netlify' })
+      };
+    }
+
+    // Zamiana Base64 na bufer
+    const imageBuffer = Buffer.from(image.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+    
+    // Tworzenie FormData dla nowego endpointu Clipdrop / Bria
+    const FormData = require('form-data');
+    const form = new FormData();
+    form.append('image_file', imageBuffer, { filename: 'image.png', contentType: 'image/png' });
+
+    if (mask) {
+      const maskBuffer = Buffer.from(mask.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+      form.append('mask_file', maskBuffer, { filename: 'mask.png', contentType: 'image/png' });
+    }
+
+    const prompt = `realistic ${material} grillz jewelry on teeth, ${position} jaw, highly detailed, professional photography`;
+    form.append('prompt', prompt);
+
+    // Poprawiony uniwersalny endpoint Clipdrop Inpainting / Replace
+    const response = await fetch('https://clipdrop-api.co/replace-background/v1', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        ...form.getHeaders()
+      },
+      body: form
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      // Jeśli endpoint replace nie zadziała, próba zapasowego endpointu text-to-image/inpainting
+      const fallbackResponse = await fetch('https://clipdrop-api.co/cleanup/v1', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          ...form.getHeaders()
+        },
+        body: form
+      });
+
+      if (!fallbackResponse.ok) {
+        throw new Error(`API Error (${response.status}): ${errText}`);
+      }
+
+      const buffer = await fallbackResponse.buffer();
+      const base64Res = buffer.toString('base64');
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ image: `data:image/png;base64,${base64Res}` })
+      };
+    }
+
+    const buffer = await response.buffer();
+    const base64Res = buffer.toString('base64');
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: generatedImageUrl })
+      body: JSON.stringify({ image: `data:image/png;base64,${base64Res}` })
     };
 
   } catch (error) {
