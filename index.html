@@ -1,194 +1,108 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Grillz Studio Configurator</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grillz Studio AI</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; text-align: center; }
+        .card { background: #1e1e1e; max-width: 450px; margin: auto; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .upload-box { border: 2px dashed #f5c518; padding: 20px; border-radius: 12px; margin-bottom: 20px; cursor: pointer; }
+        img { max-width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
+        select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-size: 16px; }
+        select { background: #333; color: #fff; }
+        button { background: #f5c518; color: #000; font-weight: bold; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        #loader { display: none; margin: 15px 0; color: #f5c518; }
+    </style>
 </head>
-<body class="bg-zinc-950 text-white min-h-screen flex flex-col justify-between p-4 font-sans select-none">
+<body>
 
-  <header class="text-center py-2">
-    <h1 class="text-xl font-black text-amber-400 uppercase tracking-widest">Grillz Custom Studio</h1>
-    <p class="text-xs text-zinc-400">Skonfiguruj i przymierz swój zestaw</p>
-  </header>
-
-  <!-- Obszar Przymierzalni -->
-  <main class="relative w-full aspect-square bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800 flex items-center justify-center my-auto shadow-2xl">
-    <img id="user-photo" class="hidden w-full h-full object-cover pointer-events-none" alt="Twoje zdjęcie">
-    <div id="placeholder-text" class="text-zinc-500 text-xs text-center p-6">
-      📷 Wgraj wyraźne zdjęcie uśmiechu z odsłoniętymi zębami
-    </div>
-
-    <!-- Dynamiczny Kontener Nakładki (SVG) -->
-    <div id="grillz-container" class="hidden absolute origin-center cursor-move transition-all" style="width: 50%; top: 40%; left: 25%;">
-      <!-- SVG Grillza generowany dynamicznie -->
-      <svg id="grillz-svg" viewBox="0 0 200 60" class="w-full h-auto drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
-        <!-- Ścieżka SVG renderowana przez JS -->
-      </svg>
-    </div>
-  </main>
-
-  <!-- Panel Konfiguratora i Sterowania -->
-  <div class="space-y-3 bg-zinc-900/90 p-4 rounded-2xl border border-zinc-800 backdrop-blur-md">
+<div class="card">
+    <h2>Grillz Studio AI</h2>
     
-    <!-- Upload Foto -->
-    <label class="block text-center bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-3 rounded-xl cursor-pointer transition active:scale-95 text-xs uppercase tracking-wider">
-      Wgraj Zdjęcie Uśmiechu
-      <input type="file" id="photo-input" accept="image/*" class="hidden">
-    </label>
-
-    <!-- Opcje Konfiguracji (Widoczne po wgraniu zdjęcia) -->
-    <div id="config-panel" class="hidden space-y-3 pt-2 border-t border-zinc-800">
-      
-      <!-- 1. Wybór Zębów -->
-      <div>
-        <label class="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block mb-1">1. Wybór Zębów</label>
-        <div class="grid grid-cols-3 gap-1.5">
-          <button data-teeth="top-6" class="btn-teeth bg-amber-500/20 border border-amber-500 text-amber-400 py-1.5 text-xs rounded-lg font-semibold">Góra (6)</button>
-          <button data-teeth="canines" class="btn-teeth bg-zinc-800 border border-zinc-700 text-zinc-300 py-1.5 text-xs rounded-lg font-semibold">Kły (3 i 3)</button>
-          <button data-teeth="bottom-6" class="btn-teeth bg-zinc-800 border border-zinc-700 text-zinc-300 py-1.5 text-xs rounded-lg font-semibold">Dół (6)</button>
-        </div>
-      </div>
-
-      <!-- 2. Materiał i Styl -->
-      <div class="grid grid-cols-2 gap-2">
-        <div>
-          <label class="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block mb-1">2. Materiał</label>
-          <select id="select-material" class="w-full bg-zinc-800 border border-zinc-700 text-xs rounded-lg p-2 text-white font-medium focus:outline-none">
-            <option value="gold">Złoto 18K</option>
-            <option value="silver">Srebro 925</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block mb-1">3. Wykończenie</label>
-          <select id="select-style" class="w-full bg-zinc-800 border border-zinc-700 text-xs rounded-lg p-2 text-white font-medium focus:outline-none">
-            <option value="full">Pełne (Full Caps)</option>
-            <option value="frame">Ramki (Open Face)</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Suwaki Dopasowania -->
-      <div class="pt-2 border-t border-zinc-800/60 space-y-1.5">
-        <div class="flex justify-between text-[11px] text-zinc-400"><span>Skala / Rozmiar</span><span id="val-scale">100%</span></div>
-        <input type="range" id="scale" min="30" max="180" value="100" class="w-full accent-amber-400 bg-zinc-800 h-1 rounded-lg appearance-none">
-        
-        <div class="flex justify-between text-[11px] text-zinc-400"><span>Kąt nachylenia</span><span id="val-rotate">0°</span></div>
-        <input type="range" id="rotate" min="-30" max="30" value="0" class="w-full accent-amber-400 bg-zinc-800 h-1 rounded-lg appearance-none">
-
-        <div class="grid grid-cols-2 gap-2 pt-1">
-          <input type="range" id="posX" min="-120" max="120" value="0" class="accent-amber-400 bg-zinc-800 h-1 rounded-lg">
-          <input type="range" id="posY" min="-120" max="120" value="0" class="accent-amber-400 bg-zinc-800 h-1 rounded-lg">
-        </div>
-      </div>
-
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+        <span id="uploadText">📷 Wgraj zdjęcie uśmiechu</span>
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="previewImage(event)">
     </div>
-  </div>
 
-  <script>
-    const photoInput = document.getElementById('photo-input');
-    const userPhoto = document.getElementById('user-photo');
-    const grillzContainer = document.getElementById('grillz-container');
-    const grillzSvg = document.getElementById('grillz-svg');
-    const placeholderText = document.getElementById('placeholder-text');
-    const configPanel = document.getElementById('config-panel');
+    <img id="imagePreview" alt="Podgląd">
 
-    let currentConfig = { teeth: 'top-6', material: 'gold', style: 'full' };
+    <select id="material">
+        <option value="14k gold">Złoto 14K</option>
+        <option value="925 silver">Srebro 925</option>
+        <option value="diamond baguette">Diamenty / Diamond Pave</option>
+    </select>
 
-    // Baza wzorów SVG
-    function renderGrillzSVG() {
-      const isGold = currentConfig.material === 'gold';
-      const colorFill = isGold ? 'url(#gold-grad)' : 'url(#silver-grad)';
-      const strokeColor = isGold ? '#D4AF37' : '#C0C0C0';
-      const fillStyle = currentConfig.style === 'frame' ? 'none' : colorFill;
-      const strokeWidth = currentConfig.style === 'frame' ? '6' : '1.5';
+    <select id="style">
+        <option value="top teeth grillz">Górny łuk (Top)</option>
+        <option value="bottom teeth grillz">Dolny łuk (Bottom)</option>
+        <option value="full cap grillz">Pełny uśmiech (Full set)</option>
+        <option value="canine caps">Kły (Canines)</option>
+    </select>
 
-      let pathD = '';
-      if (currentConfig.teeth === 'top-6') {
-        pathD = 'M 10 15 Q 100 5 190 15 Q 185 45 150 50 Q 100 55 50 50 Q 15 45 10 15 Z';
-      } else if (currentConfig.teeth === 'canines') {
-        pathD = 'M 15 15 Q 40 10 40 45 Q 15 45 15 15 Z M 160 15 Q 185 15 185 45 Q 160 45 160 15 Z';
-      } else {
-        pathD = 'M 20 40 Q 100 50 180 40 Q 170 10 140 10 Q 100 8 60 10 Q 30 10 20 40 Z';
-      }
+    <button id="generateBtn" onclick="generateAI()" disabled>GENERUJ WIZUALIZACJĘ AI</button>
+    <div id="loader">⏳ Generowanie biżuterii przez AI (może to zająć ~10s)...</div>
 
-      grillzSvg.innerHTML = `
-        <defs>
-          <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#FFE259"/>
-            <stop offset="50%" stop-color="#FFA751"/>
-            <stop offset="100%" stop-color="#FFD700"/>
-          </linearGradient>
-          <linearGradient id="silver-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#E0E0E0"/>
-            <stop offset="50%" stop-color="#F5F5F5"/>
-            <stop offset="100%" stop-color="#9E9E9E"/>
-          </linearGradient>
-        </defs>
-        <path d="${pathD}" fill="${fillStyle}" stroke="${colorFill}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
-      `;
-    }
+    <img id="resultImage" alt="Wynik AI">
+</div>
 
-    // Wgrywanie pliku
-    photoInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
+<script>
+    let base64Image = "";
+
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
         const reader = new FileReader();
-        reader.onload = (event) => {
-          userPhoto.src = event.target.result;
-          userPhoto.classList.remove('hidden');
-          grillzContainer.classList.remove('hidden');
-          placeholderText.classList.add('hidden');
-          configPanel.classList.remove('hidden');
-          renderGrillzSVG();
-          updateTransform();
+        reader.onload = function(e) {
+            base64Image = e.target.result;
+            const img = document.getElementById('imagePreview');
+            img.src = base64Image;
+            img.style.display = 'block';
+            document.getElementById('uploadText').innerText = "Zmień zdjęcie";
+            document.getElementById('generateBtn').disabled = false;
         };
         reader.readAsDataURL(file);
-      }
-    });
-
-    // Sterowanie Przyciskami
-    document.querySelectorAll('.btn-teeth').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.btn-teeth').forEach(b => {
-          b.className = 'btn-teeth bg-zinc-800 border border-zinc-700 text-zinc-300 py-1.5 text-xs rounded-lg font-semibold';
-        });
-        e.target.className = 'btn-teeth bg-amber-500/20 border border-amber-500 text-amber-400 py-1.5 text-xs rounded-lg font-semibold';
-        currentConfig.teeth = e.target.dataset.teeth;
-        renderGrillzSVG();
-      });
-    });
-
-    document.getElementById('select-material').addEventListener('change', (e) => {
-      currentConfig.material = e.target.value;
-      renderGrillzSVG();
-    });
-
-    document.getElementById('select-style').addEventListener('change', (e) => {
-      currentConfig.style = e.target.value;
-      renderGrillzSVG();
-    });
-
-    // Suwaki Transformacji
-    const scaleInput = document.getElementById('scale');
-    const rotateInput = document.getElementById('rotate');
-    const posXInput = document.getElementById('posX');
-    const posYInput = document.getElementById('posY');
-
-    function updateTransform() {
-      const scale = scaleInput.value / 100;
-      const rotate = rotateInput.value;
-      const x = posXInput.value;
-      const y = posYInput.value;
-
-      document.getElementById('val-scale').innerText = `${scaleInput.value}%`;
-      document.getElementById('val-rotate').innerText = `${rotate}°`;
-
-      grillzContainer.style.transform = `translate(${x}px, ${y}px) scale(${scale}) rotate(${rotate}deg)`;
     }
 
-    [scaleInput, rotateInput, posXInput, posYInput].forEach(i => i.addEventListener('input', updateTransform));
-  </script>
+    async function generateAI() {
+        const btn = document.getElementById('generateBtn');
+        const loader = document.getElementById('loader');
+        const resultImg = document.getElementById('resultImage');
+        const material = document.getElementById('material').value;
+        const style = document.getElementById('style').value;
+
+        btn.disabled = true;
+        loader.style.display = 'block';
+        resultImg.style.display = 'none';
+
+        try {
+            const response = await fetch('/.netlify/functions/generate-grillz', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    image: base64Image,
+                    prompt: `realistic high quality ${material} ${style} custom dental grillz jewelry on teeth, highly detailed, professional photography`
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.image) {
+                resultImg.src = data.image;
+                resultImg.style.display = 'block';
+            } else {
+                alert('Błąd generowania: ' + (data.error || 'Nieznany błąd'));
+            }
+        } catch (err) {
+            alert('Błąd połączenia z serwerem AI: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            loader.style.display = 'none';
+        }
+    }
+</script>
+
 </body>
 </html>
