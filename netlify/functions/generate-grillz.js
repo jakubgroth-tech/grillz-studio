@@ -20,11 +20,10 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    // Zaawansowany prompt wymuszający fotorealistyczne dopasowanie odbić i krawędzi biżuterii
-    const promptText = `High-end luxury jewelry macro photography. Solid ${material} grillz caps fitted precisely inside the painted mask area, realistic metallic mirror reflections, natural lighting matching the person's face, seamless precise fit over human teeth, keeping skin, lips, face, and background 100% identical to the original image.`;
+    const promptText = `Luxury jewelry macro photography, realistic solid ${material} grillz caps fitted precisely inside the painted mask area, high-end metallic mirror reflections, seamless precise fit over human teeth, keeping skin, lips, face, and background 100% identical to the original image.`;
 
-    // Używamy profesjonalnego modelu flux/dev/inpainting o znacznie lepszej jakości tekstur
-    const response = await fetch('https://fal.run/fal-ai/flux/dev/inpainting', {
+    // Powrót do stabilnego i sprawdzonego endpointu szybkiego inpaintingu
+    const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -34,9 +33,7 @@ exports.handler = async (event) => {
         image_url: image,
         mask_url: mask,
         prompt: promptText,
-        strength: 0.90,
-        guidance_scale: 3.5,
-        num_inference_steps: 28
+        strength: 0.90
       })
     });
 
