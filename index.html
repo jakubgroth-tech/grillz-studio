@@ -197,7 +197,7 @@
 
     <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
 
-    <div id="statusText">AI generuje biżuterię w wysokiej rozdzielczości...</div>
+    <div id="statusText">AI renderuje biżuterię w wysokiej rozdzielczości...</div>
   </div>
 
   <script>
@@ -428,7 +428,7 @@
 
     function draw(clientX, clientY) {
       const pos = getCanvasCoords(clientX, clientY);
-      const brushSize = Math.max(maskCanvas.width * 0.025, 12); // Stały, wygodny rozmiar pędzla
+      const brushSize = Math.max(maskCanvas.width * 0.025, 12);
 
       maskCtx.lineWidth = brushSize;
       maskCtx.lineCap = 'round';
@@ -453,7 +453,7 @@
       hiddenMaskCtx.moveTo(hiddenX, hiddenY);
     }
 
-    // ARCHITEKTURA CROP & UPSCALING (Wielki zoom detali w tle dla AI)
+    // ARCHITEKTURA CROP & SEAMLESS STITCHING (Płynne wtapianie bez kwadratów)
     document.getElementById('generateBtn').addEventListener('click', async () => {
       if (!loadedImage) { alert('Wgraj zdjęcie!'); return; }
 
@@ -464,7 +464,6 @@
       statusText.style.display = 'block';
 
       try {
-        // 1. Znajdujemy bounding box (obszar) zaznaczony przez użytkownika na masce
         const maskData = hiddenMaskCtx.getImageData(0, 0, hiddenMaskCanvas.width, hiddenMaskCanvas.height).data;
         let minX = hiddenMaskCanvas.width, minY = hiddenMaskCanvas.height, maxX = 0, maxY = 0;
         let hasPixels = false;
@@ -489,8 +488,7 @@
           return;
         }
 
-        // Dodajemy margines (kontekst warg i dziąseł dla AI)
-        const padding = 80;
+        const padding = 70;
         minX = Math.max(0, minX - padding);
         minY = Math.max(0, minY - padding);
         maxX = Math.min(hiddenMaskCanvas.width, maxX + padding);
@@ -499,7 +497,7 @@
         const cropW = maxX - minX;
         const cropH = maxY - minY;
 
-        // 2. POWIĘKSZENIE (UPSCALING) W TLE: AI dostaje wycinek zębów powiększony 2.5x dla maksymalnej szczegółowości
+        // Upscaling 2.5x dla detali AI
         const upscaleFactor = 2.5;
         const targetW = Math.round(cropW * upscaleFactor);
         const targetH = Math.round(cropH * upscaleFactor);
@@ -520,7 +518,6 @@
         const imageB64 = cropCanvas.toDataURL('image/jpeg', 0.95);
         const maskB64 = cropMaskCanvas.toDataURL('image/png');
 
-        // 3. Wysyłamy powiększony crop do serwera
         const response = await fetch('/.netlify/functions/generate-grillz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -542,18 +539,28 @@
 
         if (!response.ok) throw new Error(data.error || 'Błąd generowania');
 
-        // 4. Wklejamy wynik z powrotem (Stitch) do oryginalnego obrazu roboczego
+        // Płynne wpasowanie za pomocą szablonu maski (Destination-in) – likwiduje widoczny kwadrat!
         const resultImg = new Image();
         resultImg.crossOrigin = "anonymous";
         resultImg.onload = () => {
-          hiddenImgCtx.drawImage(resultImg, 0, 0, targetW, targetH, minX, minY, cropW, cropH);
+          const patchCanvas = document.createElement('canvas');
+          patchCanvas.width = cropW;
+          patchCanvas.height = cropH;
+          const pCtx = patchCanvas.getContext('2d');
+          
+          pCtx.drawImage(resultImg, 0, 0, targetW, targetH, 0, 0, cropW, cropH);
+          
+          // Używamy maski pędzla jako idealnego stensila wygładzającego krawędzie
+          pCtx.globalCompositeOperation = 'destination-in';
+          pCtx.drawImage(hiddenMaskCanvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+          
+          hiddenImgCtx.drawImage(patchCanvas, minX, minY);
 
-          // Składamy finalny obraz zachowując w 100% oryginalną rozdzielczość wejściową użytkownika
           const finalCanvas = document.createElement('canvas');
           finalCanvas.width = originalNaturalWidth;
           finalCanvas.height = originalNaturalHeight;
           finalCanvas.getContext('2d').drawImage(hiddenImageCanvas, 0, 0, originalNaturalWidth, originalNaturalHeight);
-
+          
           loadedImage = new Image();
           loadedImage.onload = () => { setupViewer(); clearMasks(); };
           loadedImage.src = finalCanvas.toDataURL('image/jpeg', 0.95);
