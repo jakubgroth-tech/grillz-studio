@@ -8,11 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
-  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -22,14 +20,21 @@
       margin: 0; padding: 0; width: 100%; height: 100%;
       background-color: #0b0c10; overflow: hidden; font-family: 'Syne', sans-serif;
     }
+    
+    /* Wideo z kamery (Tło) */
     .input_video {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       object-fit: cover; z-index: 1; transform: scaleX(-1);
     }
+    
+    /* Warstwa 3D z Twoim Złotem */
     .output_canvas {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 2; transform: scaleX(-1); pointer-events: none;
+      z-index: 2; transform: scaleX(-1);
+      pointer-events: none;
     }
+
+    /* Luksusowy UI */
     .ui-layer {
       position: absolute; bottom: 40px; left: 0; width: 100%;
       display: flex; flex-direction: column; align-items: center; z-index: 10;
@@ -39,6 +44,9 @@
       text-transform: uppercase; letter-spacing: 3px;
       text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 8px;
     }
+    .subtext { font-size: 11px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Ekran ładowania */
     #loadingScreen {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: #0b0c10; z-index: 20; display: flex; flex-direction: column;
@@ -57,7 +65,7 @@
 
   <div id="loadingScreen">
     <div class="spinner"></div>
-    <div class="loading-text">ŁADOWANIE GRILLZ STUDIO...</div>
+    <div class="loading-text">ŁADOWANIE SILNIKA AR...</div>
   </div>
 
   <video class="input_video" autoplay playsinline muted></video>
@@ -65,27 +73,30 @@
 
   <div class="ui-layer">
     <div class="logo">Grillz Studio</div>
+    <div class="subtext">Live AR • Master Edition</div>
   </div>
 
   <script>
     // ==========================================
-    // LINKI DO TWOICH MODELI Z GITHUBA
+    // 1. LINKI DO TWOICH MODELI GITHUB (RAW)
     // ==========================================
-    const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/refs/heads/main/grillz-top.glb";
+    const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb";
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"; 
 
-    // Suwaki kalibracji pozycji (możesz je zmieniać w razie potrzeby)
     const SCALE_MULTIPLIER = 1.0; 
-    const TOP_Y_OFFSET = 12;   // Przesunięcie górnego grilla w górę/dół względem wargi
-    const BOTTOM_Y_OFFSET = -12; // Przesunięcie dolnego grilla w górę/dół
-    const Z_DEPTH_OFFSET = -5;  // Głębokość (wpychamy za wargi)
+    const Z_DEPTH_OFFSET = -5; 
+    const TOP_Y_OFFSET = 10;
+    const BOTTOM_Y_OFFSET = -10;
 
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
     const loadingScreen = document.getElementById('loadingScreen');
 
-    // Awaryjne zdjęcie ekranu ładowania po 3 sekundach
-    const safetyTimeout = setTimeout(() => hideLoading(), 3000);
+    // Bezpiecznik ekranu ładowania (zdejmie go po 4 sekundach)
+    const safetyTimeout = setTimeout(() => {
+      hideLoading();
+    }, 4000);
+
     function hideLoading() {
       if (loadingScreen.style.display !== 'none') {
         loadingScreen.style.opacity = '0';
@@ -95,12 +106,12 @@
     }
 
     // ==========================================
-    // SILNIK 3D (THREE.JS)
+    // 2. KONFIGURACJA SILNIKA 3D (THREE.JS)
     // ==========================================
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.3;
+    renderer.toneMappingExposure = 1.2;
 
     const scene = new THREE.Scene();
 
@@ -109,7 +120,7 @@
     const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
     camera.position.z = 100;
 
-    // Oświetlenie studyjne HDRI
+    // HDRI (Oświetlenie studyjne premium)
     new THREE.RGBELoader()
       .setDataType(THREE.UnsignedByteType)
       .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', (texture) => {
@@ -121,41 +132,77 @@
         pmremGenerator.dispose();
       });
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const dirLight = new THREE.DirectionalLight(0xffffee, 2.0);
-    dirLight.position.set(0, 15, 25);
-    scene.add(dirLight);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffee, 1.8);
+    directionalLight.position.set(0, 10, 20);
+    scene.add(directionalLight);
 
     let topGrillzModel = null;
     let bottomGrillzModel = null;
-    let loadedCount = 0;
+    let loadedModelsCount = 0;
 
-    function checkLoaded() {
-      loadedCount++;
-      if (loadedCount >= 2) hideLoading();
+    function checkModelsLoaded() {
+      loadedModelsCount++;
+      if (loadedModelsCount >= 2) {
+        hideLoading();
+      }
     }
 
+    // Ładowanie plików .GLB z zabezpieczeniem siatki
     const gltfLoader = new THREE.GLTFLoader();
     
-    // Ładowanie Góry
+    // Pobierz Górę
     gltfLoader.load(URL_TOP, (gltf) => {
       topGrillzModel = gltf.scene;
+      
+      // Wymuszenie widoczności wszystkich elementów modelu
+      topGrillzModel.traverse((child) => {
+        if (child.isMesh) {
+          child.visible = true;
+          if (child.material) {
+            child.material.transparent = false;
+            child.material.opacity = 1.0;
+          }
+        }
+      });
+
       scene.add(topGrillzModel);
       topGrillzModel.visible = false;
-      checkLoaded();
-    }, undefined, (err) => { console.error(err); checkLoaded(); });
+      console.log("Model góry pomyślnie dodany do sceny!");
+      checkModelsLoaded();
+    }, undefined, (err) => {
+      console.error("KRYTYCZNY BŁĄD ŁADOWANIA GÓRY:", err);
+      checkModelsLoaded();
+    });
 
-    // Ładowanie Dołu
+    // Pobierz Dół
     gltfLoader.load(URL_BOTTOM, (gltf) => {
       bottomGrillzModel = gltf.scene;
+      
+      // Wymuszenie widoczności wszystkich elementów modelu
+      bottomGrillzModel.traverse((child) => {
+        if (child.isMesh) {
+          child.visible = true;
+          if (child.material) {
+            child.material.transparent = false;
+            child.material.opacity = 1.0;
+          }
+        }
+      });
+
       scene.add(bottomGrillzModel);
       bottomGrillzModel.visible = false;
-      checkLoaded();
-    }, undefined, (err) => { console.error(err); checkLoaded(); });
+      console.log("Model dołu pomyślnie dodany do sceny!");
+      checkModelsLoaded();
+    }, undefined, (err) => {
+      console.error("KRYTYCZNY BŁĄD ŁADOWANIA DOŁU:", err);
+      checkModelsLoaded();
+    });
 
 
     // ==========================================
-    // MATEMATYKA MEDIAPIPE I POZYCJONONOWANIE
+    // 3. ANATOMICZNA MATEMATYKA (MEDIAPIPE)
     // ==========================================
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -175,34 +222,29 @@
         const mouthCenterTop = landmarks[13]; 
         const mouthCenterBottom = landmarks[14];
 
-        // Skala oparta na szerokości uśmiechu
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
         const currentScale = (mouthWidthPixels / 110) * SCALE_MULTIPLIER;
 
-        // Rotacje głowy
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2);
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // RENDER GÓRNEGO GRILLZA
+        // Renderowanie Góry
         if (topGrillzModel) {
           topGrillzModel.visible = true;
           topGrillzModel.scale.set(currentScale, currentScale, currentScale);
           topGrillzModel.rotation.set(angleX, angleY, -angleZ);
-          
           topGrillzModel.position.x = (mouthCenterTop.x - 0.5) * width;
-          // Dodajemy korektę Y, żeby podnieść zęby na właściwą wysokość
           topGrillzModel.position.y = -(mouthCenterTop.y - 0.5) * height + TOP_Y_OFFSET;
           topGrillzModel.position.z = (mouthCenterTop.z * width) + Z_DEPTH_OFFSET;
         }
 
-        // RENDER DOLNEGO GRILLZA
+        // Renderowanie Dołu
         if (bottomGrillzModel) {
           bottomGrillzModel.visible = true;
           bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
           bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
-          
           bottomGrillzModel.position.x = (mouthCenterBottom.x - 0.5) * width;
           bottomGrillzModel.position.y = -(mouthCenterBottom.y - 0.5) * height + BOTTOM_Y_OFFSET;
           bottomGrillzModel.position.z = (mouthCenterBottom.z * width) + Z_DEPTH_OFFSET;
@@ -216,6 +258,9 @@
       renderer.render(scene, camera);
     }
 
+    // ==========================================
+    // 4. INICJALIZACJA KAMERY I MEDIAPIPE
+    // ==========================================
     const faceMesh = new FaceMesh({locateFile: (file) => {
       return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
     }});
