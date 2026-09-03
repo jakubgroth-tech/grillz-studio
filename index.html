@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — LIVE AR</title>
+  <title>GRILLZ STUDIO — TEST DIAGNOSTYCZNY</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -12,31 +12,22 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-  <!-- Three.js & Loaders -->
+  <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 
   <style>
     body, html {
       margin: 0; padding: 0; width: 100%; height: 100%;
       background-color: #0b0c10; overflow: hidden; font-family: 'Syne', sans-serif;
     }
-    
-    /* Wideo z kamery (Tło) */
     .input_video {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       object-fit: cover; z-index: 1; transform: scaleX(-1);
     }
-    
-    /* Warstwa 3D z Twoim Złotem */
     .output_canvas {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 2; transform: scaleX(-1);
-      pointer-events: none;
+      z-index: 2; transform: scaleX(-1); pointer-events: none;
     }
-
-    /* Luksusowy UI */
     .ui-layer {
       position: absolute; bottom: 40px; left: 0; width: 100%;
       display: flex; flex-direction: column; align-items: center; z-index: 10;
@@ -46,12 +37,16 @@
       text-transform: uppercase; letter-spacing: 3px;
       text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 8px;
     }
-    .subtext { font-size: 11px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 1px; }
-
-    /* Ekran ładowania */
+    /* Panel diagnostyczny na ekranie */
+    #debugStatus {
+      position: absolute; top: 20px; left: 20px; z-index: 30;
+      background: rgba(0,0,0,0.7); color: #00ffcc; padding: 10px 15px;
+      border-radius: 8px; font-family: monospace; font-size: 14px;
+      border: 1px solid #00ffcc;
+    }
     #loadingScreen {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: #0b0c10; z-index: 20; display: flex; flex-direction: column;
+      background: #0b0c10; z-index: 40; display: flex; flex-direction: column;
       justify-content: center; align-items: center; transition: opacity 0.5s ease;
     }
     .spinner {
@@ -65,56 +60,38 @@
 </head>
 <body>
 
-  <!-- Ekran ładowania -->
+  <!-- Ekran ładowania (schowa się od razu) -->
   <div id="loadingScreen">
     <div class="spinner"></div>
-    <div class="loading-text">ŁADOWANIE SILNIKA AR...</div>
+    <div class="loading-text">URUCHAMIANIE TESTU...</div>
   </div>
 
-  <!-- Kamera i Canvas 3D -->
+  <!-- Panel diagnostyczny widoczny na żywo -->
+  <div id="debugStatus">Status AI: Inicjalizowanie...</div>
+
   <video class="input_video" autoplay playsinline muted></video>
   <canvas class="output_canvas"></canvas>
 
   <div class="ui-layer">
     <div class="logo">Grillz Studio</div>
-    <div class="subtext">Live AR • Master Edition</div>
   </div>
 
   <script>
-    // ==========================================
-    // 1. POPRAWNE LINKI BEZPOŚREDNIE (RAW CONTENT)
-    // ==========================================
-    const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb";
-    const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"; 
-
-    const SCALE_MULTIPLIER = 1.0; 
-    const Z_DEPTH_OFFSET = -10; 
-
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
     const loadingScreen = document.getElementById('loadingScreen');
+    const debugStatus = document.getElementById('debugStatus');
 
-    // Bezpiecznik ekranu ładowania (zdejmie go po 4 sekundach, żeby aplikacja ruszyła w razie opóźnień)
-    const safetyTimeout = setTimeout(() => {
-      hideLoading();
-    }, 4000);
-
-    function hideLoading() {
-      if (loadingScreen.style.display !== 'none') {
-        loadingScreen.style.opacity = '0';
-        setTimeout(() => loadingScreen.style.display = 'none', 500);
-        clearTimeout(safetyTimeout);
-      }
-    }
+    // Usuwamy ekran ładowania po sekundzie, żeby od razu widzieć kamerę
+    setTimeout(() => {
+      loadingScreen.style.opacity = '0';
+      setTimeout(() => loadingScreen.style.display = 'none', 500);
+    }, 1000);
 
     // ==========================================
-    // 2. KONFIGURACJA SILNIKA 3D (THREE.JS)
+    // SILNIK 3D I ZŁOTY OBIEKT TESTOWY
     // ==========================================
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
-
     const scene = new THREE.Scene();
 
     let width = window.innerWidth;
@@ -122,63 +99,25 @@
     const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
     camera.position.z = 100;
 
-    // HDRI (Oświetlenie studyjne premium)
-    new THREE.RGBELoader()
-      .setDataType(THREE.UnsignedByteType)
-      .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', (texture) => {
-        const pmremGenerator = new THREE.PMREMGenerator(renderer);
-        pmremGenerator.compileEquirectangularShader();
-        const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-        scene.environment = envMap;
-        texture.dispose();
-        pmremGenerator.dispose();
-      });
+    // Światła
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLight.position.set(0, 10, 20);
+    scene.add(dirLight);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffee, 1.8);
-    directionalLight.position.set(0, 10, 20);
-    scene.add(directionalLight);
-
-    let topGrillzModel = null;
-    let bottomGrillzModel = null;
-    let loadedModelsCount = 0;
-
-    function checkModelsLoaded() {
-      loadedModelsCount++;
-      if (loadedModelsCount >= 2) {
-        hideLoading();
-      }
-    }
-
-    // Ładowanie plików .GLB
-    const gltfLoader = new THREE.GLTFLoader();
-    
-    // Pobierz Górę
-    gltfLoader.load(URL_TOP, (gltf) => {
-      topGrillzModel = gltf.scene;
-      scene.add(topGrillzModel);
-      topGrillzModel.visible = false;
-      checkModelsLoaded();
-    }, undefined, (err) => {
-      console.error("Błąd góry:", err);
-      checkModelsLoaded();
+    // Tworzymy wyraźny, złoty obiekt testowy (zamiast pliku .glb, żeby na pewno się pokazał)
+    const geometry = new THREE.BoxGeometry(80, 25, 20); // Kształt dopasowany do łuku zębów
+    const material = new THREE.MeshStandardMaterial({ 
+      color: 0xffd700, 
+      metalness: 1.0, 
+      roughness: 0.1 
     });
-
-    // Pobierz Dół
-    gltfLoader.load(URL_BOTTOM, (gltf) => {
-      bottomGrillzModel = gltf.scene;
-      scene.add(bottomGrillzModel);
-      bottomGrillzModel.visible = false;
-      checkModelsLoaded();
-    }, undefined, (err) => {
-      console.error("Błąd dołu:", err);
-      checkModelsLoaded();
-    });
-
+    const testGrillz = new THREE.Mesh(geometry, material);
+    scene.add(testGrillz);
+    testGrillz.visible = false;
 
     // ==========================================
-    // 3. ANATOMICZNA MATEMATYKA (MEDIAPIPE)
+    // MEDIAPIPE I ŚLEDZENIE
     // ==========================================
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -191,52 +130,46 @@
       }
 
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-        const landmarks = results.multiFaceLandmarks[0];
+        // TWARZ WYKRYTA!
+        debugStatus.innerText = "Status AI: WYKRYTO TWARZ ✅";
+        debugStatus.style.borderColor = "#00ffcc";
+        debugStatus.style.color = "#00ffcc";
 
+        const landmarks = results.multiFaceLandmarks[0];
         const leftCorner = landmarks[61];
         const rightCorner = landmarks[291];
         const topLipInner = landmarks[13]; 
-        const bottomLipInner = landmarks[14];
 
+        // Skala na podstawie szerokości ust
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
-        const currentScale = (mouthWidthPixels / 100) * SCALE_MULTIPLIER;
+        const scaleFactor = mouthWidthPixels / 120; // Normalizacja pod rozmiar kostki
 
+        // Rotacja
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2);
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // Renderowanie Góry
-        if (topGrillzModel) {
-          topGrillzModel.visible = true;
-          topGrillzModel.scale.set(currentScale, currentScale, currentScale);
-          topGrillzModel.rotation.set(angleX, angleY, -angleZ);
-          topGrillzModel.position.x = (topLipInner.x - 0.5) * width;
-          topGrillzModel.position.y = -(topLipInner.y - 0.5) * height;
-          topGrillzModel.position.z = (topLipInner.z * width) + Z_DEPTH_OFFSET;
-        }
-
-        // Renderowanie Dołu
-        if (bottomGrillzModel) {
-          bottomGrillzModel.visible = true;
-          bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
-          bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
-          bottomGrillzModel.position.x = (bottomLipInner.x - 0.5) * width;
-          bottomGrillzModel.position.y = -(bottomLipInner.y - 0.5) * height;
-          bottomGrillzModel.position.z = (bottomLipInner.z * width) + Z_DEPTH_OFFSET;
-        }
+        // Pozycjonowanie testowego złota na ustach
+        testGrillz.visible = true;
+        testGrillz.scale.set(scaleFactor, scaleFactor, scaleFactor);
+        testGrillz.rotation.set(angleX, angleY, -angleZ);
+        
+        testGrillz.position.x = (topLipInner.x - 0.5) * width;
+        testGrillz.position.y = -(topLipInner.y - 0.5) * height;
+        testGrillz.position.z = 0;
 
       } else {
-        if(topGrillzModel) topGrillzModel.visible = false;
-        if(bottomGrillzModel) bottomGrillzModel.visible = false;
+        // BRAK TWARZY W KADRZE
+        debugStatus.innerText = "Status AI: SZUKAM TWARZY... ❌";
+        debugStatus.style.borderColor = "#ff3333";
+        debugStatus.style.color = "#ff3333";
+        testGrillz.visible = false;
       }
 
       renderer.render(scene, camera);
     }
 
-    // ==========================================
-    // 4. INICJALIZACJA KAMERY I MEDIAPIPE
-    // ==========================================
     const faceMesh = new FaceMesh({locateFile: (file) => {
       return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
     }});
@@ -244,8 +177,8 @@
     faceMesh.setOptions({
       maxNumFaces: 1,
       refineLandmarks: true,
-      minDetectionConfidence: 0.6,
-      minTrackingConfidence: 0.6
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
     });
     faceMesh.onResults(onResults);
 
