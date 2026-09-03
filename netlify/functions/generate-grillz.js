@@ -20,15 +20,15 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    // Precyzyjne zdefiniowanie stylu jubilerskiego dla AI (Full Caps vs Open-Face Window Grillz)
+    // Zaawansowany żargon jubilerski dopasowany do najwyższej jakości prac (Youth Grillz Paris style)
     let stylePrompt = "";
     if (style === 'open') {
-      stylePrompt = `Open-face window grillz style: luxurious custom-fitted ${material} metallic frames, borders, and outlines wrapping tightly around the perimeter and edges of each tooth, leaving the center of each tooth hollow, uncovered, and exposing the natural white enamel inside. The jewelry is a shiny, precision-crafted metal skeleton outlining individual teeth.`;
+      stylePrompt = `Open-face window grillz style: custom-fitted luxury ${material} metallic frames and outlines wrapping precisely around the perimeter and edges of each individual tooth, leaving the center hollow and exposing the natural white enamel. Clean, sharp artisan metal skeleton structure.`;
     } else {
-      stylePrompt = `Solid full-cap grillz style: solid ${material} custom dental caps seamlessly covering every tooth completely with mirror polish.`;
+      stylePrompt = `Solid full-cap custom grillz style: seamless, mirror-polished solid ${material} dental caps perfectly encasing every tooth.`;
     }
 
-    const promptText = `Masterpiece macro jewelry photography of custom-fitted hip-hop dental grillz. ${stylePrompt} Meticulously snapped and fitted strictly over the teeth inside the masked area. The metal must rigorously follow the 3D anatomical contours, ridges, and individual separation lines of each tooth. Highly polished mirror reflections, specular highlights, and ambient shadows that perfectly match the exact lighting direction, color temperature, and brightness of the original user's face. Keep lips, skin, gums, facial features, and background 100% untouched and identical.`;
+    const promptText = `High-end professional macro jewelry photography of custom hip-hop dental grillz. ${stylePrompt} Fitted meticulously over the teeth within the masked region. The metal must accurately match the 3D anatomical curves, gaps, and separation lines of the real teeth. High-gloss mirror reflections, specular glints, and ambient occlusion shadows that precisely match the ambient lighting direction, color temperature, and intensity of the user's original photo. Lips, skin, gums, facial features, and background must remain 100% untouched and identical.`;
 
     const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
       method: 'POST',
@@ -40,7 +40,7 @@ exports.handler = async (event) => {
         image_url: image,
         mask_url: mask,
         prompt: promptText,
-        strength: 0.94
+        strength: 0.90
       })
     });
 
