@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — AUTO-FIT</title>
+  <title>GRILLZ STUDIO — ADJUSTED</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -31,9 +31,9 @@
     }
     #mobileConsole {
       position: absolute; top: 10px; left: 10px; right: 10px;
-      max-height: 120px; overflow-y: auto; background: rgba(0, 0, 0, 0.85);
-      color: #00ffcc; padding: 8px; border-radius: 6px; font-family: monospace;
-      font-size: 10px; z-index: 30; border: 1px solid #00ffcc; pointer-events: none;
+      max-height: 100px; overflow-y: auto; background: rgba(0, 0, 0, 0.85);
+      color: #00ffcc; padding: 6px; border-radius: 6px; font-family: monospace;
+      font-size: 9px; z-index: 30; border: 1px solid #00ffcc; pointer-events: none;
     }
     .ui-layer {
       position: absolute; bottom: 30px; left: 0; width: 100%;
@@ -63,7 +63,7 @@
 
   <div id="loadingScreen">
     <div class="spinner"></div>
-    <div class="loading-text">ŁADOWANIE MODELI 10MB...</div>
+    <div class="loading-text">ŁADOWANIE...</div>
   </div>
 
   <div id="mobileConsole">Start...</div>
@@ -87,6 +87,14 @@
     const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb";
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"; 
 
+    // ==========================================
+    // POPRAWIONE POZYCJE (GÓRA NIŻEJ)
+    // ==========================================
+    const SCALE_MULTIPLIER = 2.5;     
+    const TOP_Y_OFFSET = -8;          // Przesunięte w dół, bliżej środka ust
+    const BOTTOM_Y_OFFSET = -15;      
+    const Z_DEPTH_OFFSET = -2;        
+
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
     const loadingScreen = document.getElementById('loadingScreen');
@@ -96,7 +104,7 @@
         loadingScreen.style.opacity = '0';
         setTimeout(() => loadingScreen.style.display = 'none', 500);
       }
-    }, 4000);
+    }, 3000);
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
@@ -110,7 +118,6 @@
     const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
     camera.position.z = 100;
 
-    // Światła studyjne
     scene.add(new THREE.AmbientLight(0xffffff, 1.2));
     const frontLight = new THREE.DirectionalLight(0xffffee, 3.0);
     frontLight.position.set(0, 0, 50);
@@ -126,7 +133,7 @@
     function checkLoaded() {
       loadedCount++;
       if (loadedCount >= 2) {
-        logOnScreen("Wszystkie modele przetworzone!");
+        logOnScreen("Gotowe!");
         loadingScreen.style.opacity = '0';
         setTimeout(() => loadingScreen.style.display = 'none', 500);
       }
@@ -134,20 +141,11 @@
 
     const gltfLoader = new THREE.GLTFLoader();
     
-    // Funkcja optymalizująca i naprawiająca materiał/skalę wczytanego modelu 10MB
-    function setupModel(gltf, name) {
+    function setupModel(gltf) {
       const model = gltf.scene;
-      
-      // Automatyczne obliczenie skali i rozmiaru w oparciu o Bounding Box modelu
-      const box = new THREE.Box3().setFromObject(model);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      logOnScreen(`${name} rozmiar: X:${size.x.toFixed(1)} Y:${size.y.toFixed(1)}`);
-
       model.traverse((child) => {
         if (child.isMesh) {
           child.visible = true;
-          // Zapewniamy, że materiał wygląda jak złoto, jeśli plik zapisał surowe kolory
           if (child.material) {
             child.material.metalness = 0.9;
             child.material.roughness = 0.15;
@@ -155,33 +153,22 @@
           }
         }
       });
-
       return model;
     }
 
-    logOnScreen("Pobieranie góry 10MB...");
     gltfLoader.load(URL_TOP, (gltf) => {
-      topGrillzModel = setupModel(gltf, "Góra");
+      topGrillzModel = setupModel(gltf);
       scene.add(topGrillzModel);
       topGrillzModel.visible = false;
-      logOnScreen("Góra gotowa!");
       checkLoaded();
-    }, undefined, (err) => {
-      logOnScreen("BŁĄD GÓRY: " + err.message, true);
-      checkLoaded();
-    });
+    }, undefined, (err) => { logOnScreen("Błąd góry", true); checkLoaded(); });
 
-    logOnScreen("Pobieranie dołu 10MB...");
     gltfLoader.load(URL_BOTTOM, (gltf) => {
-      bottomGrillzModel = setupModel(gltf, "Dół");
+      bottomGrillzModel = setupModel(gltf);
       scene.add(bottomGrillzModel);
       bottomGrillzModel.visible = false;
-      logOnScreen("Dół gotowy!");
       checkLoaded();
-    }, undefined, (err) => {
-      logOnScreen("BŁĄD DOŁU: " + err.message, true);
-      checkLoaded();
-    });
+    }, undefined, (err) => { logOnScreen("Błąd dołu", true); checkLoaded(); });
 
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -201,12 +188,8 @@
         const mouthCenterTop = landmarks[13]; 
         const mouthCenterBottom = landmarks[14];
 
-        // Bazowa szerokość ust w pikselach
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
-        
-        // Dynamiczna skala dostosowana do 10-megabajtowych modeli z Blendera
-        // Jeśli model w Blenderze był modelowany w metrach, ta skala go dopasuje do pikseli ekranu
-        const autoScale = mouthWidthPixels * 0.8; 
+        const autoScale = mouthWidthPixels * SCALE_MULTIPLIER; 
 
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2);
@@ -218,8 +201,8 @@
           topGrillzModel.scale.set(autoScale, autoScale, autoScale);
           topGrillzModel.rotation.set(angleX, angleY, -angleZ);
           topGrillzModel.position.x = (mouthCenterTop.x - 0.5) * width;
-          topGrillzModel.position.y = -(mouthCenterTop.y - 0.5) * height;
-          topGrillzModel.position.z = (mouthCenterTop.z * width);
+          topGrillzModel.position.y = -(mouthCenterTop.y - 0.5) * height + TOP_Y_OFFSET;
+          topGrillzModel.position.z = (mouthCenterTop.z * width) + Z_DEPTH_OFFSET;
         }
 
         if (bottomGrillzModel) {
@@ -227,8 +210,8 @@
           bottomGrillzModel.scale.set(autoScale, autoScale, autoScale);
           bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
           bottomGrillzModel.position.x = (mouthCenterBottom.x - 0.5) * width;
-          bottomGrillzModel.position.y = -(mouthCenterBottom.y - 0.5) * height;
-          bottomGrillzModel.position.z = (mouthCenterBottom.z * width);
+          bottomGrillzModel.position.y = -(mouthCenterBottom.y - 0.5) * height + BOTTOM_Y_OFFSET;
+          bottomGrillzModel.position.z = (mouthCenterBottom.z * width) + Z_DEPTH_OFFSET;
         }
 
       } else {
