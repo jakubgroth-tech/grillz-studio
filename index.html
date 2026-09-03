@@ -2,7 +2,6 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <!-- Blokada natywnego powiększania strony przez przeglądarkę - aplikacja działa jak natywna -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>GRILLZ STUDIO — Virtual Try-On</title>
   
@@ -104,7 +103,6 @@
     
     .tiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     
-    /* Wspólne kafelki dla wyboru materiału i stylu */
     .option-tile {
       background: var(--input-bg); border: 2px solid var(--card-border);
       border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: center;
@@ -155,11 +153,11 @@
 
     <div class="instructions" id="hint">
       🖐️ <b>Dwa palce</b>: powiększanie i przesuwanie<br>
-      🖌️ <b>Jeden palec</b>: malowanie zębów
+      🖌️ <b>Jeden palec</b>: zaznaczenie zębów
     </div>
     
     <div class="tools-bar" id="toolsBar">
-      <button type="button" class="btn-tool" id="clearBtn">↺ Wyczyść maskę</button>
+      <button type="button" class="btn-tool" id="clearBtn">↺ Wyczyść</button>
       <button type="button" class="btn-tool" id="resetBtn">📁 Zmień zdjęcie</button>
     </div>
 
@@ -199,7 +197,7 @@
 
     <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
 
-    <div id="statusText">AI renderuje biżuterię klasy premium...</div>
+    <div id="statusText">AI generuje biżuterię w wysokiej rozdzielczości...</div>
   </div>
 
   <script>
@@ -220,7 +218,6 @@
     let originalNaturalWidth = 0;
     let originalNaturalHeight = 0;
     
-    // Gesty mobilne
     let isDrawing = false;
     let isPanning = false;
     let scale = 1;
@@ -348,7 +345,6 @@
       canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
-    // Bezproblemowe mapowanie koordynatów - getBoundingClientRect uwzględnia wszystko
     function getCanvasCoords(clientX, clientY) {
       const rect = maskCanvas.getBoundingClientRect();
       const x = ((clientX - rect.left) / rect.width) * maskCanvas.width;
@@ -356,7 +352,6 @@
       return { x, y };
     }
 
-    // Obsługa 2 palców (Zoom/Pan) i 1 palca (Malowanie)
     maskCanvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
       if (!loadedImage) return;
@@ -375,7 +370,7 @@
       } else if (e.touches.length === 1) {
         isDrawing = true;
         isPanning = false;
-        draw(e.touches[0].clientX, e.touches[0].clientY, false);
+        draw(e.touches[0].clientX, e.touches[0].clientY);
       }
     }, {passive: false});
 
@@ -401,7 +396,7 @@
         updateTransform();
 
       } else if (e.touches.length === 1 && isDrawing) {
-        draw(e.touches[0].clientX, e.touches[0].clientY, true);
+        draw(e.touches[0].clientX, e.touches[0].clientY);
       }
     }, {passive: false});
 
@@ -415,14 +410,13 @@
       }
     });
 
-    // Wsparcie dla myszy (Desktopy)
     maskCanvas.addEventListener('mousedown', (e) => {
       if (!loadedImage) return;
       isDrawing = true;
-      draw(e.clientX, e.clientY, false);
+      draw(e.clientX, e.clientY);
     });
     window.addEventListener('mousemove', (e) => {
-      if (isDrawing) draw(e.clientX, e.clientY, true);
+      if (isDrawing) draw(e.clientX, e.clientY);
     });
     window.addEventListener('mouseup', () => {
       if (isDrawing) {
@@ -432,9 +426,9 @@
       }
     });
 
-    function draw(clientX, clientY, isContinuous) {
+    function draw(clientX, clientY) {
       const pos = getCanvasCoords(clientX, clientY);
-      const brushSize = Math.max(maskCanvas.width * 0.015, 8) / Math.sqrt(scale);
+      const brushSize = Math.max(maskCanvas.width * 0.025, 12); // Stały, wygodny rozmiar pędzla
 
       maskCtx.lineWidth = brushSize;
       maskCtx.lineCap = 'round';
@@ -459,6 +453,7 @@
       hiddenMaskCtx.moveTo(hiddenX, hiddenY);
     }
 
+    // ARCHITEKTURA CROP & UPSCALING (Wielki zoom detali w tle dla AI)
     document.getElementById('generateBtn').addEventListener('click', async () => {
       if (!loadedImage) { alert('Wgraj zdjęcie!'); return; }
 
@@ -469,9 +464,63 @@
       statusText.style.display = 'block';
 
       try {
-        const imageB64 = hiddenImageCanvas.toDataURL('image/jpeg', 0.95);
-        const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
+        // 1. Znajdujemy bounding box (obszar) zaznaczony przez użytkownika na masce
+        const maskData = hiddenMaskCtx.getImageData(0, 0, hiddenMaskCanvas.width, hiddenMaskCanvas.height).data;
+        let minX = hiddenMaskCanvas.width, minY = hiddenMaskCanvas.height, maxX = 0, maxY = 0;
+        let hasPixels = false;
 
+        for (let y = 0; y < hiddenMaskCanvas.height; y++) {
+          for (let x = 0; x < hiddenMaskCanvas.width; x++) {
+            const idx = (y * hiddenMaskCanvas.width + x) * 4;
+            if (maskData[idx] > 128) {
+              hasPixels = true;
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+
+        if (!hasPixels) {
+          alert('Zaznacz zęby na zdjęciu przed uruchomieniem przymiarki!');
+          generateBtn.disabled = false;
+          statusText.style.display = 'none';
+          return;
+        }
+
+        // Dodajemy margines (kontekst warg i dziąseł dla AI)
+        const padding = 80;
+        minX = Math.max(0, minX - padding);
+        minY = Math.max(0, minY - padding);
+        maxX = Math.min(hiddenMaskCanvas.width, maxX + padding);
+        maxY = Math.min(hiddenMaskCanvas.height, maxY + padding);
+
+        const cropW = maxX - minX;
+        const cropH = maxY - minY;
+
+        // 2. POWIĘKSZENIE (UPSCALING) W TLE: AI dostaje wycinek zębów powiększony 2.5x dla maksymalnej szczegółowości
+        const upscaleFactor = 2.5;
+        const targetW = Math.round(cropW * upscaleFactor);
+        const targetH = Math.round(cropH * upscaleFactor);
+
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = targetW;
+        cropCanvas.height = targetH;
+        cropCanvas.getContext('2d').drawImage(hiddenImageCanvas, minX, minY, cropW, cropH, 0, 0, targetW, targetH);
+
+        const cropMaskCanvas = document.createElement('canvas');
+        cropMaskCanvas.width = targetW;
+        cropMaskCanvas.height = targetH;
+        const cropMaskCtx = cropMaskCanvas.getContext('2d');
+        cropMaskCtx.fillStyle = '#000000';
+        cropMaskCtx.fillRect(0, 0, targetW, targetH);
+        cropMaskCtx.drawImage(hiddenMaskCanvas, minX, minY, cropW, cropH, 0, 0, targetW, targetH);
+
+        const imageB64 = cropCanvas.toDataURL('image/jpeg', 0.95);
+        const maskB64 = cropMaskCanvas.toDataURL('image/png');
+
+        // 3. Wysyłamy powiększony crop do serwera
         const response = await fetch('/.netlify/functions/generate-grillz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -493,18 +542,20 @@
 
         if (!response.ok) throw new Error(data.error || 'Błąd generowania');
 
+        // 4. Wklejamy wynik z powrotem (Stitch) do oryginalnego obrazu roboczego
         const resultImg = new Image();
         resultImg.crossOrigin = "anonymous";
         resultImg.onload = () => {
+          hiddenImgCtx.drawImage(resultImg, 0, 0, targetW, targetH, minX, minY, cropW, cropH);
+
+          // Składamy finalny obraz zachowując w 100% oryginalną rozdzielczość wejściową użytkownika
           const finalCanvas = document.createElement('canvas');
           finalCanvas.width = originalNaturalWidth;
           finalCanvas.height = originalNaturalHeight;
-          const finalCtx = finalCanvas.getContext('2d');
-          
-          finalCtx.drawImage(resultImg, 0, 0, originalNaturalWidth, originalNaturalHeight);
-          
+          finalCanvas.getContext('2d').drawImage(hiddenImageCanvas, 0, 0, originalNaturalWidth, originalNaturalHeight);
+
           loadedImage = new Image();
-          loadedImage.onload = () => { setupViewer(); };
+          loadedImage.onload = () => { setupViewer(); clearMasks(); };
           loadedImage.src = finalCanvas.toDataURL('image/jpeg', 0.95);
         };
         resultImg.src = data.image;
