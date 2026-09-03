@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — LIVE AR AR</title>
+  <title>GRILLZ STUDIO — LIVE AR</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -49,6 +49,7 @@
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: #0b0c10; z-index: 20; display: flex; flex-direction: column;
       justify-content: center; align-items: center; transition: opacity 0.5s ease;
+      text-align: center; padding: 20px;
     }
     .spinner {
       width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2);
@@ -56,7 +57,7 @@
       animation: spin 1s linear infinite; margin-bottom: 20px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { color: #d4af37; font-size: 14px; letter-spacing: 2px; }
+    .loading-text { color: #d4af37; font-size: 14px; letter-spacing: 2px; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -76,26 +77,50 @@
 
   <script>
     // ==========================================
-    // 1. LINKI I KONFIGURACJA
+    // 1. LINKI (MUSZĄ BYĆ RAW Z GITHUBA!)
     // ==========================================
-    const URL_TOP = "TWOJ_LINK_DO_GORNEGO_GRILLZA.glb";
-    const URL_BOTTOM = "TWOJ_LINK_DO_DOLNEGO_GRILLZA.glb";
+    // Przykład poprawnego linku: "https://raw.githubusercontent.com/TwojLogin/TwojeRepo/main/top-grill.glb"
+    
+    const URL_TOP = "TUTAJ_WKLEJ_RAW_LINK_DO_GORY.glb";
+    const URL_BOTTOM = "TUTAJ_WKLEJ_RAW_LINK_DO_DOLU.glb";
 
-    // Zmniejszono skalę (było 1.0, jest 0.85). Jeśli nadal za duże, zmień np. na 0.75
     const SCALE_MULTIPLIER = 0.85; 
     const Z_DEPTH_OFFSET = -10; 
 
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
     const loadingScreen = document.getElementById('loadingScreen');
+    const loadingText = document.querySelector('.loading-text');
+    const spinner = document.querySelector('.spinner');
 
     // ==========================================
-    // 2. SILNIK THREE.JS I REALIZM (PBR)
+    // 2. LOADING MANAGER (Nowy system kontroli błędów)
+    // ==========================================
+    const loadingManager = new THREE.LoadingManager();
+
+    loadingManager.onLoad = function () {
+      // Wykona się tylko, gdy WSZYSTKO (HDRI + 2 modele) załaduje się pomyślnie
+      setTimeout(() => { 
+        loadingScreen.style.opacity = '0'; 
+        setTimeout(() => loadingScreen.style.display = 'none', 500); 
+      }, 800);
+    };
+
+    loadingManager.onError = function (url) {
+      // Wyłapuje błędne linki i błędy plików
+      console.error('Błąd ładowania pliku:', url);
+      spinner.style.display = 'none';
+      loadingText.style.color = '#ff4444';
+      loadingText.innerHTML = `BŁĄD ŁADOWANIA PLIKU!<br><br>Sprawdź czy link do modelu to na pewno format RAW:<br><span style="font-size:10px; color:#aaa;">raw.githubusercontent.com</span>`;
+    };
+
+    // ==========================================
+    // 3. SILNIK THREE.JS I REALIZM
     // ==========================================
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1; // Minimalnie ściemnione dla naturalności
+    renderer.toneMappingExposure = 1.1; 
 
     const scene = new THREE.Scene();
 
@@ -104,8 +129,8 @@
     const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
     camera.position.z = 100;
 
-    // Pobieranie luksusowego HDRI (Wirtualne Studio Fotograficzne)
-    new THREE.RGBELoader()
+    // Ładowanie HDRI z podpiętym Managerem
+    new THREE.RGBELoader(loadingManager)
       .setDataType(THREE.UnsignedByteType)
       .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', (texture) => {
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -116,25 +141,19 @@
         pmremGenerator.dispose();
       });
 
-    // Światło (zmienione z żółtawego na czysto białe, by nie podbijać żółci)
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     directionalLight.position.set(0, 5, 10);
     scene.add(directionalLight);
 
-    // FUNKCJA: Fizyka Prawdziwego Złota
-    // Ta funkcja nadpisuje ustawienia z Meshy.ai i zmusza materiał, by wyglądał jak premium biżuteria
     function applyRealisticGold(model) {
       model.traverse((child) => {
         if (child.isMesh) {
-          // Stonowany, realistyczny odcień 14-karatowego złota (mniej jaskrawy)
           child.material.color.setHex(0xe5c573); 
-          
-          child.material.metalness = 1.0; // 100% metal
-          child.material.roughness = 0.12; // Bardzo gładkie, niemal lustrzane (jak wypolerowane)
-          child.material.envMapIntensity = 1.6; // Jak mocno odbija środowisko
-          
+          child.material.metalness = 1.0; 
+          child.material.roughness = 0.12; 
+          child.material.envMapIntensity = 1.6; 
           child.material.needsUpdate = true;
         }
       });
@@ -143,26 +162,29 @@
     let topGrillzModel = null;
     let bottomGrillzModel = null;
 
-    const gltfLoader = new THREE.GLTFLoader();
+    // Ładowanie modeli z podpiętym Managerem
+    const gltfLoader = new THREE.GLTFLoader(loadingManager);
     
-    gltfLoader.load(URL_TOP, (gltf) => {
-      topGrillzModel = gltf.scene;
-      applyRealisticGold(topGrillzModel); // Aplikujemy nasze profesjonalne złoto
-      scene.add(topGrillzModel);
-      topGrillzModel.visible = false; 
-    });
+    if(URL_TOP !== "TUTAJ_WKLEJ_RAW_LINK_DO_GORY.glb") {
+      gltfLoader.load(URL_TOP, (gltf) => {
+        topGrillzModel = gltf.scene;
+        applyRealisticGold(topGrillzModel); 
+        scene.add(topGrillzModel);
+        topGrillzModel.visible = false; 
+      });
+    }
 
-    gltfLoader.load(URL_BOTTOM, (gltf) => {
-      bottomGrillzModel = gltf.scene;
-      applyRealisticGold(bottomGrillzModel); // Aplikujemy nasze profesjonalne złoto
-      scene.add(bottomGrillzModel);
-      bottomGrillzModel.visible = false;
-      
-      setTimeout(() => { loadingScreen.style.opacity = '0'; setTimeout(() => loadingScreen.style.display = 'none', 500); }, 1000);
-    });
+    if(URL_BOTTOM !== "TUTAJ_WKLEJ_RAW_LINK_DO_DOLU.glb") {
+      gltfLoader.load(URL_BOTTOM, (gltf) => {
+        bottomGrillzModel = gltf.scene;
+        applyRealisticGold(bottomGrillzModel); 
+        scene.add(bottomGrillzModel);
+        bottomGrillzModel.visible = false;
+      });
+    }
 
     // ==========================================
-    // 3. ANATOMICZNA MATEMATYKA (MEDIAPIPE)
+    // 4. ANATOMICZNA MATEMATYKA (MEDIAPIPE)
     // ==========================================
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -182,17 +204,14 @@
         const topLipInner = landmarks[13]; 
         const bottomLipInner = landmarks[14];
 
-        // Skala 
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
         const currentScale = (mouthWidthPixels / 100) * SCALE_MULTIPLIER; 
 
-        // Rotacja (Tilt głowy)
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2.5);
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // Pozycja Góra
         topGrillzModel.visible = true;
         topGrillzModel.scale.set(currentScale, currentScale, currentScale);
         topGrillzModel.rotation.set(angleX, angleY, -angleZ); 
@@ -200,7 +219,6 @@
         topGrillzModel.position.y = -(topLipInner.y - 0.5) * height; 
         topGrillzModel.position.z = (topLipInner.z * width) + Z_DEPTH_OFFSET;
 
-        // Pozycja Dół
         bottomGrillzModel.visible = true;
         bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
         bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
@@ -217,7 +235,7 @@
     }
 
     // ==========================================
-    // 4. START KAMERY
+    // 5. START KAMERY
     // ==========================================
     const faceMesh = new FaceMesh({locateFile: (file) => {
       return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
