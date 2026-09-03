@@ -3,13 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — Virtual Try-On</title>
+  <title>GRILLZ STUDIO — Live AR Try-On</title>
   
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0b0c10">
+
+  <!-- Google MediaPipe do śledzenia twarzy w czasie rzeczywistym -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -56,45 +60,30 @@
       width: 100%; height: 340px; background: var(--input-bg);
       border: 2px dashed var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; margin-bottom: 12px; cursor: pointer;
-    }
-    .preview-box input[type="file"] {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 20;
-    }
-    .upload-text { text-align: center; color: var(--text-muted); font-size: 14px; padding: 20px; z-index: 5; }
-    .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 16px; margin-bottom: 4px; }
-
-    .canvas-viewport {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      overflow: hidden; display: none; z-index: 10;
-    }
-    .canvas-container {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      transform-origin: 0 0; touch-action: none;
-      display: flex; align-items: center; justify-content: center;
+      align-items: center; justify-content: center; margin-bottom: 12px;
     }
 
-    #previewImageElement {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: contain; pointer-events: none; z-index: 1;
+    /* Elementy wideo i płótno AR w czasie rzeczywistym */
+    #webcam {
+      display: none;
+    }
+    #arCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* Efekt lustra */
     }
 
-    #maskCanvas {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 2; touch-action: none; cursor: crosshair;
+    .start-screen {
+      text-align: center; padding: 20px; z-index: 10;
     }
-
-    .tools-bar { display: flex; gap: 8px; margin-bottom: 12px; display: none; }
-    .btn-tool {
-      flex: 1; background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--card-border);
-      padding: 10px 4px; font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
-      transition: all 0.2s; text-align: center;
-    }
-    .btn-tool:hover { border-color: var(--accent-gold); color: var(--text-main); }
+    .start-screen span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 16px; margin-bottom: 8px; }
+    .start-screen p { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
 
     .instructions {
       font-size: 11px; color: var(--accent-gold); text-align: center;
-      margin-bottom: 12px; display: none; background: rgba(212, 175, 55, 0.08);
+      margin-bottom: 12px; background: rgba(212, 175, 55, 0.08);
       padding: 8px; border-radius: 6px; line-height: 1.4;
     }
 
@@ -125,7 +114,6 @@
       transition: background 0.2s; text-transform: uppercase; letter-spacing: 1px;
     }
     .btn-submit:hover { background: var(--accent-gold-hover); }
-    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
     #statusText { text-align: center; font-size: 12px; color: var(--accent-gold); margin-top: 12px; display: none; }
   </style>
@@ -138,40 +126,31 @@
     </div>
 
     <div class="preview-box" id="dropArea">
-      <input type="file" id="imageInput" accept="image/*">
-      <div class="upload-text" id="uploadPlaceholder">
-        <span>Wgraj zdjęcie</span>
-      </div>
+      <video id="webcam" playsinline></video>
+      <canvas id="arCanvas"></canvas>
       
-      <div class="canvas-viewport" id="canvasViewport">
-        <div class="canvas-container" id="canvasContainer">
-          <img id="previewImageElement" alt="Podgląd">
-          <canvas id="maskCanvas"></canvas>
-        </div>
+      <div class="start-screen" id="startScreen">
+        <span>Żywa Przymierzalnia AR</span>
+        <p>Zobacz jak prezentują się grillz w czasie rzeczywistym</p>
+        <button type="button" class="btn-submit" id="startCameraBtn" style="margin-top: 0; padding: 12px;">Włącz Kamerę</button>
       </div>
     </div>
 
     <div class="instructions" id="hint">
-      🖐️ <b>Dwa palce</b>: powiększanie i przesuwanie<br>
-      🖌️ <b>Jeden palec</b>: zaznaczenie zębów
-    </div>
-    
-    <div class="tools-bar" id="toolsBar">
-      <button type="button" class="btn-tool" id="clearBtn">↺ Wyczyść</button>
-      <button type="button" class="btn-tool" id="resetBtn">📁 Zmień zdjęcie</button>
+      ✨ Otwórz usta szeroko przed kamerą, aby aktywować biżuterię
     </div>
 
     <div class="form-group">
       <span class="label-title">Wybierz materiał</span>
       <div class="tiles-grid">
-        <div class="option-tile active material-tile" data-value="14k shiny gold">
+        <div class="option-tile active material-tile" data-value="gold">
           <div class="tile-color gold"></div>
           <div>
             <span class="tile-text">Złoto</span>
             <span class="tile-sub">14K Gold</span>
           </div>
         </div>
-        <div class="option-tile material-tile" data-value="925 sterling silver">
+        <div class="option-tile material-tile" data-value="silver">
           <div class="tile-color silver"></div>
           <div>
             <span class="tile-text">Srebro</span>
@@ -195,43 +174,21 @@
       </div>
     </div>
 
-    <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
-
-    <div id="statusText">Ostatnie szlify...</div>
+    <div id="statusText">Inicjalizacja kamery...</div>
   </div>
 
   <script>
-    const imageInput = document.getElementById('imageInput');
-    const dropArea = document.getElementById('dropArea');
-    const canvasViewport = document.getElementById('canvasViewport');
-    const canvasContainer = document.getElementById('canvasContainer');
-    const previewImageElement = document.getElementById('previewImageElement');
-    const maskCanvas = document.getElementById('maskCanvas');
-    const maskCtx = maskCanvas.getContext('2d');
-    
-    const hiddenImageCanvas = document.createElement('canvas');
-    const hiddenImgCtx = hiddenImageCanvas.getContext('2d');
-    const hiddenMaskCanvas = document.createElement('canvas');
-    const hiddenMaskCtx = hiddenMaskCanvas.getContext('2d');
+    const videoElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('arCanvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const startScreen = document.getElementById('startScreen');
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const statusText = document.getElementById('statusText');
 
-    let loadedImage = null;
-    let originalNaturalWidth = 0;
-    let originalNaturalHeight = 0;
-    
-    let isDrawing = false;
-    let isPanning = false;
-    let scale = 1;
-    let panX = 0;
-    let panY = 0;
-    let initialDistance = 0;
-    let initialScale = 1;
-    let initialPanX = 0;
-    let initialPanY = 0;
-    let initialCenterX = 0;
-    let initialCenterY = 0;
-
-    let selectedMaterial = "14k shiny gold";
+    let selectedMaterial = "gold";
     let selectedStyle = "full";
+    let faceMesh = null;
+    let camera = null;
 
     document.querySelectorAll('.material-tile').forEach(tile => {
       tile.addEventListener('click', () => {
@@ -249,266 +206,129 @@
       });
     });
 
-    imageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          originalNaturalWidth = img.width;
-          originalNaturalHeight = img.height;
-
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 1280;
-
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-
-          hiddenImageCanvas.width = hiddenMaskCanvas.width = width;
-          hiddenImageCanvas.height = hiddenMaskCanvas.height = height;
-
-          hiddenImgCtx.clearRect(0, 0, width, height);
-          hiddenImgCtx.drawImage(img, 0, 0, width, height);
-          
-          loadedImage = new Image();
-          loadedImage.onload = setupViewer;
-          loadedImage.src = hiddenImageCanvas.toDataURL('image/jpeg', 0.95);
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
-    function setupViewer() {
-      const width = hiddenImageCanvas.width;
-      const height = hiddenImageCanvas.height;
-
-      const containerWidth = dropArea.clientWidth;
-      const calculatedHeight = containerWidth * (height / width);
-      dropArea.style.height = Math.min(Math.max(calculatedHeight, 280), 420) + 'px';
-
-      hiddenMaskCtx.fillStyle = '#000000';
-      hiddenMaskCtx.fillRect(0, 0, width, height);
-      maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
-
-      previewImageElement.src = loadedImage.src;
-      
-      setTimeout(() => {
-        const rect = previewImageElement.getBoundingClientRect();
-        if (rect.width > 0) {
-          maskCanvas.width = rect.width;
-          maskCanvas.height = rect.height;
-        }
-      }, 50);
-
-      scale = 1; panX = 0; panY = 0;
-      updateTransform();
-
-      document.getElementById('uploadPlaceholder').style.display = 'none';
-      imageInput.style.display = 'none';
-      canvasViewport.style.display = 'block';
-      document.getElementById('hint').style.display = 'block';
-      document.getElementById('toolsBar').style.display = 'flex';
-    }
-
-    function clearMasks() {
-      maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
-      hiddenMaskCtx.fillStyle = '#000000';
-      hiddenMaskCtx.fillRect(0, 0, hiddenMaskCanvas.width, hiddenMaskCanvas.height);
-    }
-    
-    document.getElementById('clearBtn').addEventListener('click', clearMasks);
-
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      loadedImage = null;
-      imageInput.value = '';
-      imageInput.style.display = 'block';
-      document.getElementById('uploadPlaceholder').style.display = 'block';
-      canvasViewport.style.display = 'none';
-      document.getElementById('hint').style.display = 'none';
-      document.getElementById('toolsBar').style.display = 'none';
-      dropArea.style.height = '340px';
-      clearMasks();
-    });
-
-    function updateTransform() {
-      canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-    }
-
-    function getCanvasCoords(clientX, clientY) {
-      const rect = maskCanvas.getBoundingClientRect();
-      const x = ((clientX - rect.left) / rect.width) * maskCanvas.width;
-      const y = ((clientY - rect.top) / rect.height) * maskCanvas.height;
-      return { x, y };
-    }
-
-    maskCanvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      if (!loadedImage) return;
-
-      if (e.touches.length === 2) {
-        isDrawing = false;
-        isPanning = true;
-        const t1 = e.touches[0];
-        const t2 = e.touches[1];
-        initialDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-        initialScale = scale;
-        initialCenterX = (t1.clientX + t2.clientX) / 2;
-        initialCenterY = (t1.clientY + t2.clientY) / 2;
-        initialPanX = panX;
-        initialPanY = panY;
-      } else if (e.touches.length === 1) {
-        isDrawing = true;
-        isPanning = false;
-        draw(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    }, {passive: false});
-
-    maskCanvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      if (!loadedImage) return;
-
-      if (e.touches.length === 2 && isPanning) {
-        const t1 = e.touches[0];
-        const t2 = e.touches[1];
-        const currentDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-        const currentCenterX = (t1.clientX + t2.clientX) / 2;
-        const currentCenterY = (t1.clientY + t2.clientY) / 2;
-
-        const scaleRatio = currentDistance / initialDistance;
-        scale = Math.min(Math.max(initialScale * scaleRatio, 1.0), 6.0); 
-
-        const ratio = scale / initialScale;
-        panX = currentCenterX - (initialCenterX - initialPanX) * ratio;
-        panY = currentCenterY - (initialCenterY - initialPanY) * ratio;
-
-        if (scale === 1) { panX = 0; panY = 0; }
-        updateTransform();
-
-      } else if (e.touches.length === 1 && isDrawing) {
-        draw(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    }, {passive: false});
-
-    maskCanvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      if (e.touches.length < 2) isPanning = false;
-      if (e.touches.length === 0 && isDrawing) {
-        isDrawing = false;
-        maskCtx.beginPath();
-        hiddenMaskCtx.beginPath();
-      }
-    });
-
-    maskCanvas.addEventListener('mousedown', (e) => {
-      if (!loadedImage) return;
-      isDrawing = true;
-      draw(e.clientX, e.clientY);
-    });
-    window.addEventListener('mousemove', (e) => {
-      if (isDrawing) draw(e.clientX, e.clientY);
-    });
-    window.addEventListener('mouseup', () => {
-      if (isDrawing) {
-        isDrawing = false;
-        maskCtx.beginPath();
-        hiddenMaskCtx.beginPath();
-      }
-    });
-
-    function draw(clientX, clientY) {
-      const pos = getCanvasCoords(clientX, clientY);
-      const brushSize = Math.max(maskCanvas.width * 0.025, 12);
-
-      maskCtx.lineWidth = brushSize;
-      maskCtx.lineCap = 'round';
-      maskCtx.strokeStyle = 'rgba(212, 175, 55, 0.75)';
-      maskCtx.lineTo(pos.x, pos.y);
-      maskCtx.stroke();
-      maskCtx.beginPath();
-      maskCtx.moveTo(pos.x, pos.y);
-
-      const scaleX = hiddenMaskCanvas.width / maskCanvas.width;
-      const scaleY = hiddenMaskCanvas.height / maskCanvas.height;
-      const hiddenX = pos.x * scaleX;
-      const hiddenY = pos.y * scaleY;
-      const hiddenBrushSize = brushSize * scaleX;
-
-      hiddenMaskCtx.lineWidth = hiddenBrushSize;
-      hiddenMaskCtx.lineCap = 'round';
-      hiddenMaskCtx.strokeStyle = '#FFFFFF';
-      hiddenMaskCtx.lineTo(hiddenX, hiddenY);
-      hiddenMaskCtx.stroke();
-      hiddenMaskCtx.beginPath();
-      hiddenMaskCtx.moveTo(hiddenX, hiddenY);
-    }
-
-    // Bezpośrednie i stabilne generowanie pełnoobrazowe
-    document.getElementById('generateBtn').addEventListener('click', async () => {
-      if (!loadedImage) { alert('Wgraj zdjęcie!'); return; }
-
-      const generateBtn = document.getElementById('generateBtn');
-      const statusText = document.getElementById('statusText');
-
-      generateBtn.disabled = true;
+    startCameraBtn.addEventListener('click', () => {
+      startScreen.style.display = 'none';
       statusText.style.display = 'block';
-
-      try {
-        const imageB64 = hiddenImageCanvas.toDataURL('image/jpeg', 0.95);
-        const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
-
-        const response = await fetch('/.netlify/functions/generate-grillz', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: imageB64,
-            mask: maskB64,
-            material: selectedMaterial,
-            style: selectedStyle
-          })
-        });
-
-        const responseText = await response.text();
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (e) {
-          throw new Error(`Błąd serwera: ${responseText}`);
-        }
-
-        if (!response.ok) throw new Error(data.error || 'Błąd generowania');
-
-        const resultImg = new Image();
-        resultImg.crossOrigin = "anonymous";
-        resultImg.onload = () => {
-          const finalCanvas = document.createElement('canvas');
-          finalCanvas.width = originalNaturalWidth;
-          finalCanvas.height = originalNaturalHeight;
-          finalCanvas.getContext('2d').drawImage(resultImg, 0, 0, originalNaturalWidth, originalNaturalHeight);
-          
-          loadedImage = new Image();
-          loadedImage.onload = () => { setupViewer(); clearMasks(); };
-          loadedImage.src = finalCanvas.toDataURL('image/jpeg', 0.95);
-        };
-        resultImg.src = data.image;
-
-      } catch (err) {
-        alert('SZCZEGÓŁY BŁĘDU:\n\n' + err.message);
-      } finally {
-        generateBtn.disabled = false;
-        statusText.style.display = 'none';
-      }
+      statusText.textContent = "Uruchamianie skanera twarzy...";
+      initAR();
     });
+
+    function initAR() {
+      faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6
+      });
+
+      faceMesh.onResults(onResults);
+
+      camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoElement });
+        },
+        width: 640,
+        height: 480
+      });
+
+      camera.start()
+        .then(() => {
+          statusText.style.display = 'none';
+        })
+        .catch(err => {
+          alert("Błąd dostępu do kamery: " + err.message);
+          startScreen.style.display = 'block';
+          statusText.style.display = 'none';
+        });
+    }
+
+    function onResults(results) {
+      canvasElement.width = videoElement.videoWidth || 640;
+      canvasElement.height = videoElement.videoHeight || 480;
+
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      // Rysujemy obraz z kamery
+      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const landmarks = results.multiFaceLandmarks[0];
+        
+        // Kluczowe punkty wewnętrznych ust / zębów w MediaPipe Face Mesh
+        // 13: góra wewnętrzna, 14: dół wewnętrzna, 61: lewy kącik, 291: prawy kącik
+        const upperLip = landmarks[13];
+        const lowerLip = landmarks[14];
+        const leftCorner = landmarks[61];
+        const rightCorner = landmarks[291];
+
+        const topY = upperLip.y * canvasElement.height;
+        const bottomY = lowerLip.y * canvasElement.height;
+        const leftX = leftCorner.x * canvasElement.width;
+        const rightX = rightCorner.x * canvasElement.width;
+
+        const mouthHeight = bottomY - topY;
+        const mouthWidth = rightX - leftX;
+
+        // Sprawdzamy czy usta są otwarte (mouthHeight > threshold)
+        if (mouthHeight > 12) {
+          drawGrillz(leftX, topY, mouthWidth, mouthHeight);
+        }
+      }
+
+      canvasCtx.restore();
+    }
+
+    function drawGrillz(x, y, w, h) {
+      canvasCtx.save();
+      
+      // Wybór gradientu w zależności od materiału
+      let grad;
+      if (selectedMaterial === 'gold') {
+        grad = canvasCtx.createLinearGradient(x, y, x + w, y + h);
+        grad.addColorStop(0, '#ffe566');
+        grad.addColorStop(0.5, '#d4af37');
+        grad.addColorStop(1, '#99750f');
+      } else {
+        grad = canvasCtx.createLinearGradient(x, y, x + w, y + h);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.5, '#cfd5db');
+        grad.addColorStop(1, '#7a8593');
+      }
+
+      // Pozycja nakładki na górne zęby (tuż pod górną wargą)
+      const grillzX = x - w * 0.05;
+      const grillzY = y - h * 0.1;
+      const grillzW = w * 1.1;
+      const grillzH = h * 0.55;
+
+      canvasCtx.fillStyle = grad;
+      canvasCtx.shadowColor = 'rgba(0,0,0,0.5)';
+      canvasCtx.shadowBlur = 10;
+
+      if (selectedStyle === 'full') {
+        // Styl: Pełne zęby (Solid Caps) z zaokrąglonymi rogami
+        canvasCtx.beginPath();
+        canvasCtx.roundRect(grillzX, grillzY, grillzW, grillzH, 6);
+        canvasCtx.fill();
+
+        // Dodanie odblasku mirror-gloss w stylu jubilerskim
+        canvasCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        canvasCtx.fillRect(grillzX + grillzW * 0.1, grillzY + grillzH * 0.15, grillzW * 0.8, grillzH * 0.2);
+      } else {
+        // Styl: Ramki (Open Face)
+        canvasCtx.lineWidth = 4;
+        canvasCtx.strokeStyle = grad;
+        canvasCtx.beginPath();
+        canvasCtx.roundRect(grillzX, grillzY, grillzW, grillzH, 6);
+        canvasCtx.stroke();
+      }
+
+      canvasCtx.restore();
+    }
   </script>
 </body>
 </html>
