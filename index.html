@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — LIVE AR AR</title>
+  <title>GRILLZ STUDIO — LIVE AR</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -26,13 +26,13 @@
     /* Wideo z kamery (Tło) */
     .input_video {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: cover; z-index: 1; transform: scaleX(-1); /* Odbicie lustrzane */
+      object-fit: cover; z-index: 1; transform: scaleX(-1);
     }
     
     /* Warstwa 3D z Twoim Złotem */
     .output_canvas {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 2; transform: scaleX(-1); /* Odbicie lustrzane dla zgodności z wideo */
+      z-index: 2; transform: scaleX(-1);
       pointer-events: none;
     }
 
@@ -48,7 +48,7 @@
     }
     .subtext { font-size: 11px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Ekran ładowania (znika, gdy pobierze modele i włączy kamerę) */
+    /* Ekran ładowania */
     #loadingScreen {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: #0b0c10; z-index: 20; display: flex; flex-direction: column;
@@ -82,58 +82,74 @@
 
   <script>
     // ==========================================
-    // 1. LINKI DO TWOICH MODELI GITHUB (RAW)
+    // 1. POPRAWNE LINKI BEZPOŚREDNIE (RAW CONTENT)
     // ==========================================
-    const URL_TOP = "https://github.com/jakubgroth-tech/grillz-studio/raw/refs/heads/main/grillz-top.glb";
-    const URL_BOTTOM = "https://github.com/jakubgroth-tech/grillz-studio/raw/refs/heads/main/grillz-bottom.glb"; 
+    const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb";
+    const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"; 
 
-    // Opcja korekty skali - jak wrzucisz model i będzie za mały/duży, zmień ten mnożnik (np. na 2.0 lub 0.5)
     const SCALE_MULTIPLIER = 1.0; 
-    // Przesunięcie zębów lekko do tyłu (głębia), żeby chowały się za wargami
     const Z_DEPTH_OFFSET = -10; 
 
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
     const loadingScreen = document.getElementById('loadingScreen');
 
+    // Bezpiecznik ekranu ładowania (zdejmie go po 4 sekundach, żeby aplikacja ruszyła w razie opóźnień)
+    const safetyTimeout = setTimeout(() => {
+      hideLoading();
+    }, 4000);
+
+    function hideLoading() {
+      if (loadingScreen.style.display !== 'none') {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => loadingScreen.style.display = 'none', 500);
+        clearTimeout(safetyTimeout);
+      }
+    }
+
     // ==========================================
     // 2. KONFIGURACJA SILNIKA 3D (THREE.JS)
     // ==========================================
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
-    // Ustawiamy silnik fizyki światła
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
 
     const scene = new THREE.Scene();
 
-    // Kamera ortograficzna idealna do nakładania 2D/3D Face Trackingu
     let width = window.innerWidth;
     let height = window.innerHeight;
     const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
     camera.position.z = 100;
 
-    // HDRI (Oświetlenie studyjne premium) - ładujemy z darmowego publicznego CDN do testów
+    // HDRI (Oświetlenie studyjne premium)
     new THREE.RGBELoader()
       .setDataType(THREE.UnsignedByteType)
       .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', (texture) => {
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
         const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-        scene.environment = envMap; // To nadaje złotu ultra realistyczne odbicia
+        scene.environment = envMap;
         texture.dispose();
         pmremGenerator.dispose();
       });
 
-    // Światła pomocnicze
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffee, 1.5);
+    const directionalLight = new THREE.DirectionalLight(0xffffee, 1.8);
     directionalLight.position.set(0, 10, 20);
     scene.add(directionalLight);
 
     let topGrillzModel = null;
     let bottomGrillzModel = null;
+    let loadedModelsCount = 0;
+
+    function checkModelsLoaded() {
+      loadedModelsCount++;
+      if (loadedModelsCount >= 2) {
+        hideLoading();
+      }
+    }
 
     // Ładowanie plików .GLB
     const gltfLoader = new THREE.GLTFLoader();
@@ -142,18 +158,23 @@
     gltfLoader.load(URL_TOP, (gltf) => {
       topGrillzModel = gltf.scene;
       scene.add(topGrillzModel);
-      topGrillzModel.visible = false; // Ukryj do momentu wykrycia twarzy
-    }, undefined, (err) => console.error("Błąd ładowania góry:", err));
+      topGrillzModel.visible = false;
+      checkModelsLoaded();
+    }, undefined, (err) => {
+      console.error("Błąd góry:", err);
+      checkModelsLoaded();
+    });
 
     // Pobierz Dół
     gltfLoader.load(URL_BOTTOM, (gltf) => {
       bottomGrillzModel = gltf.scene;
       scene.add(bottomGrillzModel);
       bottomGrillzModel.visible = false;
-      
-      // Kiedy oba się załadują, ukryj ekran ładowania
-      setTimeout(() => { loadingScreen.style.opacity = '0'; setTimeout(() => loadingScreen.style.display = 'none', 500); }, 1000);
-    }, undefined, (err) => console.error("Błąd ładowania dołu:", err));
+      checkModelsLoaded();
+    }, undefined, (err) => {
+      console.error("Błąd dołu:", err);
+      checkModelsLoaded();
+    });
 
 
     // ==========================================
@@ -162,7 +183,6 @@
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
       
-      // Aktualizacja rozmiaru okna
       if (width !== window.innerWidth) {
         width = window.innerWidth; height = window.innerHeight;
         camera.left = -width/2; camera.right = width/2;
@@ -170,50 +190,41 @@
         camera.updateProjectionMatrix();
       }
 
-      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && topGrillzModel && bottomGrillzModel) {
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
 
-        // Kąciki ust (do skali i kątów)
         const leftCorner = landmarks[61];
         const rightCorner = landmarks[291];
-        
-        // Środki warg od wewnętrznej strony (zęby zaczynają się tuż pod/nad nimi)
         const topLipInner = landmarks[13]; 
         const bottomLipInner = landmarks[14];
 
-        // 1. OBLICZANIE SKALI
-        // Mierzymy szerokość ust w pikselach ekranu
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
-        const currentScale = (mouthWidthPixels / 100) * SCALE_MULTIPLIER; // Podzielone przez 100 jako bazowa normalizacja
+        const currentScale = (mouthWidthPixels / 100) * SCALE_MULTIPLIER;
 
-        // 2. OBLICZANIE ROTACJI (Oś Z - przechylenie głowy w lewo/prawo)
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
-        
-        // Obliczanie Rotacji (Oś Y - obrót w lewo/prawo) - aproksymacja z głębi kącików
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2);
-
-        // Obliczanie Rotacji (Oś X - kiwanie góra/dół) - czoło vs broda
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // 3. POZYCJONOWANIE - GÓRA
-        topGrillzModel.visible = true;
-        topGrillzModel.scale.set(currentScale, currentScale, currentScale);
-        topGrillzModel.rotation.set(angleX, angleY, -angleZ); // Minus przy Z z powodu odwróconej kamery
-        
-        // Kotwiczymy do wewnętrznej górnej wargi (środek Origin Twojego modelu musi być na jedynkach!)
-        topGrillzModel.position.x = (topLipInner.x - 0.5) * width;
-        topGrillzModel.position.y = -(topLipInner.y - 0.5) * height; // Oś Y w WebGL jest odwrócona
-        topGrillzModel.position.z = (topLipInner.z * width) + Z_DEPTH_OFFSET;
+        // Renderowanie Góry
+        if (topGrillzModel) {
+          topGrillzModel.visible = true;
+          topGrillzModel.scale.set(currentScale, currentScale, currentScale);
+          topGrillzModel.rotation.set(angleX, angleY, -angleZ);
+          topGrillzModel.position.x = (topLipInner.x - 0.5) * width;
+          topGrillzModel.position.y = -(topLipInner.y - 0.5) * height;
+          topGrillzModel.position.z = (topLipInner.z * width) + Z_DEPTH_OFFSET;
+        }
 
-        // 4. POZYCJONOWANIE - DÓŁ
-        bottomGrillzModel.visible = true;
-        bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
-        bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
-
-        bottomGrillzModel.position.x = (bottomLipInner.x - 0.5) * width;
-        bottomGrillzModel.position.y = -(bottomLipInner.y - 0.5) * height;
-        bottomGrillzModel.position.z = (bottomLipInner.z * width) + Z_DEPTH_OFFSET;
+        // Renderowanie Dołu
+        if (bottomGrillzModel) {
+          bottomGrillzModel.visible = true;
+          bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
+          bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
+          bottomGrillzModel.position.x = (bottomLipInner.x - 0.5) * width;
+          bottomGrillzModel.position.y = -(bottomLipInner.y - 0.5) * height;
+          bottomGrillzModel.position.z = (bottomLipInner.z * width) + Z_DEPTH_OFFSET;
+        }
 
       } else {
         if(topGrillzModel) topGrillzModel.visible = false;
@@ -232,7 +243,7 @@
     
     faceMesh.setOptions({
       maxNumFaces: 1,
-      refineLandmarks: true, // Wymagane dla precyzyjnych ust
+      refineLandmarks: true,
       minDetectionConfidence: 0.6,
       minTrackingConfidence: 0.6
     });
