@@ -77,15 +77,21 @@
 
   <script>
     // ==========================================
-    // 1. LINKI (MUSZĄ BYĆ RAW Z GITHUBA!)
+    // 1. LINKI DO MODELI
     // ==========================================
-    // Przykład poprawnego linku: "https://raw.githubusercontent.com/TwojLogin/TwojeRepo/main/top-grill.glb"
-    
     const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb";
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb";
 
-    const SCALE_MULTIPLIER = 40; 
-    const Z_DEPTH_OFFSET = -0.5; 
+    // ==========================================
+    // 2. KALIBRACJA ROZMIARU I POZYCJI (Zmień te wartości, by dopasować)
+    // ==========================================
+    const SCALE_MULTIPLIER = 150.0;  // Zwiększone z 40 na 150 (musi być kropka!)
+    
+    // Suwaki do przesuwania góra/dół (wartości w pikselach)
+    const MOVE_TOP_DOWN = 40.0;    // Obniża górny grillz (im więcej, tym niżej zjedzie z wargi)
+    const MOVE_BOTTOM_DOWN = 0.0;  // Dół na razie zostawiamy na 0
+
+    const Z_DEPTH_OFFSET = -0.5;   // Głębia, lekko za wargami
 
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
@@ -94,12 +100,11 @@
     const spinner = document.querySelector('.spinner');
 
     // ==========================================
-    // 2. LOADING MANAGER (Nowy system kontroli błędów)
+    // 3. LOADING MANAGER
     // ==========================================
     const loadingManager = new THREE.LoadingManager();
 
     loadingManager.onLoad = function () {
-      // Wykona się tylko, gdy WSZYSTKO (HDRI + 2 modele) załaduje się pomyślnie
       setTimeout(() => { 
         loadingScreen.style.opacity = '0'; 
         setTimeout(() => loadingScreen.style.display = 'none', 500); 
@@ -107,7 +112,6 @@
     };
 
     loadingManager.onError = function (url) {
-      // Wyłapuje błędne linki i błędy plików
       console.error('Błąd ładowania pliku:', url);
       spinner.style.display = 'none';
       loadingText.style.color = '#ff4444';
@@ -115,7 +119,7 @@
     };
 
     // ==========================================
-    // 3. SILNIK THREE.JS I REALIZM
+    // 4. SILNIK THREE.JS I REALIZM
     // ==========================================
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
@@ -129,7 +133,6 @@
     const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
     camera.position.z = 100;
 
-    // Ładowanie HDRI z podpiętym Managerem
     new THREE.RGBELoader(loadingManager)
       .setDataType(THREE.UnsignedByteType)
       .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', (texture) => {
@@ -162,7 +165,6 @@
     let topGrillzModel = null;
     let bottomGrillzModel = null;
 
-    // Ładowanie modeli z podpiętym Managerem
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
     
     if(URL_TOP !== "TUTAJ_WKLEJ_RAW_LINK_DO_GORY.glb") {
@@ -184,7 +186,7 @@
     }
 
     // ==========================================
-    // 4. ANATOMICZNA MATEMATYKA (MEDIAPIPE)
+    // 5. ANATOMICZNA MATEMATYKA (MEDIAPIPE)
     // ==========================================
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -216,14 +218,15 @@
         topGrillzModel.scale.set(currentScale, currentScale, currentScale);
         topGrillzModel.rotation.set(angleX, angleY, -angleZ); 
         topGrillzModel.position.x = (topLipInner.x - 0.5) * width;
-        topGrillzModel.position.y = -(topLipInner.y - 0.5) * height; 
+        // Dodano odjęcie MOVE_TOP_DOWN żeby wcisnąć to niżej
+        topGrillzModel.position.y = -(topLipInner.y - 0.5) * height - MOVE_TOP_DOWN; 
         topGrillzModel.position.z = (topLipInner.z * width) + Z_DEPTH_OFFSET;
 
         bottomGrillzModel.visible = true;
         bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
         bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
         bottomGrillzModel.position.x = (bottomLipInner.x - 0.5) * width;
-        bottomGrillzModel.position.y = -(bottomLipInner.y - 0.5) * height;
+        bottomGrillzModel.position.y = -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN;
         bottomGrillzModel.position.z = (bottomLipInner.z * width) + Z_DEPTH_OFFSET;
 
       } else {
@@ -235,7 +238,7 @@
     }
 
     // ==========================================
-    // 5. START KAMERY
+    // 6. START KAMERY
     // ==========================================
     const faceMesh = new FaceMesh({locateFile: (file) => {
       return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
