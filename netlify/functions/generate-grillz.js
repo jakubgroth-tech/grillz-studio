@@ -20,7 +20,7 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    // Dynamiczna zmiana promptu na podstawie wyboru stylistyki
+    // Instrukcje jubilerskie dla wybranego stylu (Pełne / Ramki)
     let stylePrompt = "";
     if (style === 'open') {
       stylePrompt = `Open-face window grillz style: thick ${material} metallic borders outlining the edges of the teeth, leaving the center of each tooth hollow and exposing the natural white enamel inside. The jewelry acts strictly as a shiny metallic frame around the perimeter of the teeth.`;
@@ -30,8 +30,8 @@ exports.handler = async (event) => {
 
     const promptText = `Ultra-detailed macro jewelry photography of custom-fitted hip-hop dental grillz. ${stylePrompt} Meticulously fitted precisely over the teeth strictly inside the masked area. Highly polished mirror metallic reflections, sharp realistic contours separating individual teeth, natural lighting reflecting off the metal, premium custom jewelry look. Keep the lips, skin, facial features, gums, and background 100% untouched and identical to the original image.`;
 
-    // Używamy modelu Flux Dev Inpainting dla zachowania ultra realizmu
-    const response = await fetch('https://fal.run/fal-ai/flux/dev/inpainting', {
+    // Używamy stabilnego i superszybkiego endpointu inpaintingu fal.ai
+    const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -41,9 +41,7 @@ exports.handler = async (event) => {
         image_url: image,
         mask_url: mask,
         prompt: promptText,
-        strength: 0.95, // Bardzo wysoka siła maski, żeby wymusić detale Open Face
-        guidance_scale: 8.5,
-        num_inference_steps: 28
+        strength: 0.92
       })
     });
 
