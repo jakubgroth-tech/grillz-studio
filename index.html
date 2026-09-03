@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — LIVE AR</title>
+  <title>GRILLZ STUDIO — DEBUG MOBILE</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
+  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
+  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -21,64 +23,78 @@
       background-color: #0b0c10; overflow: hidden; font-family: 'Syne', sans-serif;
     }
     
-    /* Wideo z kamery (Tło) */
     .input_video {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       object-fit: cover; z-index: 1; transform: scaleX(-1);
     }
     
-    /* Warstwa 3D z Twoim Złotem */
     .output_canvas {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 2; transform: scaleX(-1);
+      z-index: 2; transform: scaleX(-1); pointer-events: none;
+    }
+
+    /* Panel logów na żywo na ekranie telefonu */
+    #mobileConsole {
+      position: absolute; top: 10px; left: 10px; right: 10px;
+      max-height: 150px; overflow-y: auto; background: rgba(0, 0, 0, 0.85);
+      color: #00ffcc; padding: 10px; border-radius: 6px; font-family: monospace;
+      font-size: 11px; z-index: 30; border: 1px solid #00ffcc; pointer-events: none;
+    }
+
+    .ui-layer {
+      position: absolute; bottom: 30px; left: 0; width: 100%;
+      display: flex; flex-direction: column; align-items: center; z-index: 10;
       pointer-events: none;
     }
-
-    /* Luksusowy UI */
-    .ui-layer {
-      position: absolute; bottom: 40px; left: 0; width: 100%;
-      display: flex; flex-direction: column; align-items: center; z-index: 10;
-    }
     .logo {
-      font-size: 24px; font-weight: 800; color: #d4af37;
-      text-transform: uppercase; letter-spacing: 3px;
-      text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 8px;
+      font-size: 20px; font-weight: 800; color: #d4af37;
+      text-transform: uppercase; letter-spacing: 2px;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.8);
     }
-    .subtext { font-size: 11px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Ekran ładowania */
     #loadingScreen {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: #0b0c10; z-index: 20; display: flex; flex-direction: column;
+      background: #0b0c10; z-index: 40; display: flex; flex-direction: column;
       justify-content: center; align-items: center; transition: opacity 0.5s ease;
     }
     .spinner {
-      width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2);
+      width: 40px; height: 40px; border: 3px solid rgba(212, 175, 55, 0.2);
       border-top-color: #d4af37; border-radius: 50%;
-      animation: spin 1s linear infinite; margin-bottom: 20px;
+      animation: spin 1s linear infinite; margin-bottom: 15px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { color: #d4af37; font-size: 14px; letter-spacing: 2px; }
+    .loading-text { color: #d4af37; font-size: 13px; letter-spacing: 2px; }
   </style>
 </head>
 <body>
 
+  <!-- Ekran ładowania -->
   <div id="loadingScreen">
     <div class="spinner"></div>
     <div class="loading-text">ŁADOWANIE SILNIKA AR...</div>
   </div>
+
+  <!-- Okno logów diagnostycznych na ekranie -->
+  <div id="mobileConsole">Inicjalizowanie systemu...</div>
 
   <video class="input_video" autoplay playsinline muted></video>
   <canvas class="output_canvas"></canvas>
 
   <div class="ui-layer">
     <div class="logo">Grillz Studio</div>
-    <div class="subtext">Live AR • Master Edition</div>
   </div>
 
   <script>
+    const consoleDiv = document.getElementById('mobileConsole');
+    function logOnScreen(msg, isError = false) {
+      console.log(msg);
+      const time = new Date().toLocaleTimeString();
+      consoleDiv.innerHTML += `<br><span style="color: ${isError ? '#ff4444' : '#00ffcc'}">[${time}] ${msg}</span>`;
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
     // ==========================================
-    // 1. LINKI DO TWOICH MODELI GITHUB (RAW)
+    // LINKI DO MODELI GITHUB (RAW)
     // ==========================================
     const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb";
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"; 
@@ -92,8 +108,9 @@
     const canvasElement = document.querySelector('.output_canvas');
     const loadingScreen = document.getElementById('loadingScreen');
 
-    // Bezpiecznik ekranu ładowania (zdejmie go po 4 sekundach)
+    // Bezpiecznik zdejmujący ekran ładowania po 4 sekundach
     const safetyTimeout = setTimeout(() => {
+      logOnScreen("Awaryjne zdjęcie ekranu ładowania (timeout).", true);
       hideLoading();
     }, 4000);
 
@@ -106,8 +123,9 @@
     }
 
     // ==========================================
-    // 2. KONFIGURACJA SILNIKA 3D (THREE.JS)
+    // KONFIGURACJA SILNIKA 3D
     // ==========================================
+    logOnScreen("Inicjalizowanie Three.js...");
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -120,20 +138,21 @@
     const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
     camera.position.z = 100;
 
-    // HDRI (Oświetlenie studyjne premium)
+    // Ładowanie HDRI
     new THREE.RGBELoader()
       .setDataType(THREE.UnsignedByteType)
       .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', (texture) => {
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
-        const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-        scene.environment = envMap;
+        scene.environment = pmremGenerator.fromEquirectangular(texture).texture;
         texture.dispose();
         pmremGenerator.dispose();
+        logOnScreen("Środowisko HDRI załadowane.");
+      }, undefined, (err) => {
+        logOnScreen("Błąd ładowania HDRI (używam zapasowego światła)", true);
       });
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
     const directionalLight = new THREE.DirectionalLight(0xffffee, 1.8);
     directionalLight.position.set(0, 10, 20);
     scene.add(directionalLight);
@@ -145,64 +164,53 @@
     function checkModelsLoaded() {
       loadedModelsCount++;
       if (loadedModelsCount >= 2) {
+        logOnScreen("Oba modele gotowe. Ukrywam ekran ładowania.");
         hideLoading();
       }
     }
 
-    // Ładowanie plików .GLB z zabezpieczeniem siatki
+    // Ładowanie plików .GLB
     const gltfLoader = new THREE.GLTFLoader();
     
-    // Pobierz Górę
+    logOnScreen("Pobieranie grillz-top.glb...");
     gltfLoader.load(URL_TOP, (gltf) => {
       topGrillzModel = gltf.scene;
-      
-      // Wymuszenie widoczności wszystkich elementów modelu
       topGrillzModel.traverse((child) => {
         if (child.isMesh) {
           child.visible = true;
-          if (child.material) {
-            child.material.transparent = false;
-            child.material.opacity = 1.0;
-          }
+          if (child.material) { child.material.transparent = false; child.material.opacity = 1.0; }
         }
       });
-
       scene.add(topGrillzModel);
       topGrillzModel.visible = false;
-      console.log("Model góry pomyślnie dodany do sceny!");
+      logOnScreen("Sukces: Górny grillz pobrany!");
       checkModelsLoaded();
     }, undefined, (err) => {
-      console.error("KRYTYCZNY BŁĄD ŁADOWANIA GÓRY:", err);
+      logOnScreen("BŁĄD GÓRY: " + (err.message || err), true);
       checkModelsLoaded();
     });
 
-    // Pobierz Dół
+    logOnScreen("Pobieranie grillz-bottom.glb...");
     gltfLoader.load(URL_BOTTOM, (gltf) => {
       bottomGrillzModel = gltf.scene;
-      
-      // Wymuszenie widoczności wszystkich elementów modelu
       bottomGrillzModel.traverse((child) => {
         if (child.isMesh) {
           child.visible = true;
-          if (child.material) {
-            child.material.transparent = false;
-            child.material.opacity = 1.0;
-          }
+          if (child.material) { child.material.transparent = false; child.material.opacity = 1.0; }
         }
       });
-
       scene.add(bottomGrillzModel);
       bottomGrillzModel.visible = false;
-      console.log("Model dołu pomyślnie dodany do sceny!");
+      logOnScreen("Sukces: Dolny grillz pobrany!");
       checkModelsLoaded();
     }, undefined, (err) => {
-      console.error("KRYTYCZNY BŁĄD ŁADOWANIA DOŁU:", err);
+      logOnScreen("BŁĄD DOŁU: " + (err.message || err), true);
       checkModelsLoaded();
     });
 
 
     // ==========================================
-    // 3. ANATOMICZNA MATEMATYKA (MEDIAPIPE)
+    // MEDIAPIPE
     // ==========================================
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -230,7 +238,6 @@
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // Renderowanie Góry
         if (topGrillzModel) {
           topGrillzModel.visible = true;
           topGrillzModel.scale.set(currentScale, currentScale, currentScale);
@@ -240,7 +247,6 @@
           topGrillzModel.position.z = (mouthCenterTop.z * width) + Z_DEPTH_OFFSET;
         }
 
-        // Renderowanie Dołu
         if (bottomGrillzModel) {
           bottomGrillzModel.visible = true;
           bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
@@ -258,9 +264,6 @@
       renderer.render(scene, camera);
     }
 
-    // ==========================================
-    // 4. INICJALIZACJA KAMERY I MEDIAPIPE
-    // ==========================================
     const faceMesh = new FaceMesh({locateFile: (file) => {
       return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
     }});
