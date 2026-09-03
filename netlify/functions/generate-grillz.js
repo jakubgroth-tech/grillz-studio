@@ -20,17 +20,16 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    // Instrukcje jubilerskie dla wybranego stylu (Pełne / Ramki)
+    // Zaawansowane instrukcje dla stylu "Ramki" (Open Face) vs "Pełne"
     let stylePrompt = "";
     if (style === 'open') {
-      stylePrompt = `Open-face window grillz style: thick ${material} metallic borders outlining the edges of the teeth, leaving the center of each tooth hollow and exposing the natural white enamel inside. The jewelry acts strictly as a shiny metallic frame around the perimeter of the teeth.`;
+      stylePrompt = `Open-face window grillz style: luxurious custom-fitted ${material} metallic borders and frames outlining exclusively the perimeter, edges, and gaps of the teeth, leaving the front center of each tooth completely hollow, uncovered, and exposing the natural white enamel inside. The jewelry acts precisely as a shiny metallic outer frame.`;
     } else {
-      stylePrompt = `Solid full-cap grillz style: completely covering the teeth with solid ${material} custom dental molds.`;
+      stylePrompt = `Solid full-cap grillz style: completely and seamlessly covering the teeth with solid ${material} custom dental molds and caps.`;
     }
 
-    const promptText = `Ultra-detailed macro jewelry photography of custom-fitted hip-hop dental grillz. ${stylePrompt} Meticulously fitted precisely over the teeth strictly inside the masked area. Highly polished mirror metallic reflections, sharp realistic contours separating individual teeth, natural lighting reflecting off the metal, premium custom jewelry look. Keep the lips, skin, facial features, gums, and background 100% untouched and identical to the original image.`;
+    const promptText = `Ultra-detailed macro jewelry photography of custom hip-hop dental grillz. ${stylePrompt} Meticulously snapped and fitted strictly over the teeth inside the masked area. Highly polished mirror metallic reflections, sharp realistic contours separating individual teeth caps, professional studio lighting reflecting off the metal. Keep lips, skin, facial features, and background 100% untouched and identical to the original image.`;
 
-    // Używamy stabilnego i superszybkiego endpointu inpaintingu fal.ai
     const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
       method: 'POST',
       headers: {
@@ -41,7 +40,7 @@ exports.handler = async (event) => {
         image_url: image,
         mask_url: mask,
         prompt: promptText,
-        strength: 0.92
+        strength: 0.94
       })
     });
 
