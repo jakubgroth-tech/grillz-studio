@@ -2,8 +2,10 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Blokada natywnego powiększania strony przez przeglądarkę - aplikacja działa jak natywna -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>GRILLZ STUDIO — Virtual Try-On</title>
+  
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,35 +31,26 @@
       background-color: var(--bg-color); color: var(--text-main);
       font-family: 'Plus Jakarta Sans', sans-serif;
       min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+      overscroll-behavior-y: contain;
     }
     .container {
       width: 100%; max-width: 440px; background: var(--card-bg);
       border: 1px solid var(--card-border); border-radius: var(--radius);
-      padding: 28px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+      padding: 24px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
       position: relative; overflow: hidden;
     }
     
     .container::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image: url('logo.png');
-      background-repeat: repeat;
-      background-size: 70px;
-      opacity: 0.035;
-      pointer-events: none;
-      z-index: 0;
+      content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background-image: url('logo.png'); background-repeat: repeat;
+      background-size: 70px; opacity: 0.035; pointer-events: none; z-index: 0;
     }
     .container > * { position: relative; z-index: 1; }
 
-    .header { text-align: center; margin-bottom: 22px; }
+    .header { text-align: center; margin-bottom: 20px; }
     .logo { 
-      font-family: 'Syne', sans-serif; 
-      font-size: 26px; 
-      font-weight: 800; 
-      color: var(--accent-gold); 
-      letter-spacing: 2px; 
-      text-transform: uppercase; 
+      font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; 
+      color: var(--accent-gold); letter-spacing: 2px; text-transform: uppercase; 
     }
     
     .preview-box {
@@ -78,74 +71,50 @@
     }
     .canvas-container {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      transform-origin: 0 0;
-      touch-action: none;
+      transform-origin: 0 0; touch-action: none;
+      display: flex; align-items: center; justify-content: center;
     }
 
     #previewImageElement {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: contain;
-      pointer-events: none;
-      z-index: 1;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      object-fit: contain; pointer-events: none; z-index: 1;
     }
 
     #maskCanvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 2;
-      cursor: crosshair;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 2; touch-action: none; cursor: crosshair;
     }
-    .canvas-container.pan-mode #maskCanvas { cursor: grab; }
-    .canvas-container.pan-mode:active #maskCanvas { cursor: grabbing; }
 
-    .tools-bar {
-      display: flex; gap: 6px; margin-bottom: 12px; display: none;
-    }
+    .tools-bar { display: flex; gap: 8px; margin-bottom: 12px; display: none; }
     .btn-tool {
       flex: 1; background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--card-border);
-      padding: 7px 4px; font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
+      padding: 10px 4px; font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; text-transform: uppercase;
       transition: all 0.2s; text-align: center;
     }
     .btn-tool:hover { border-color: var(--accent-gold); color: var(--text-main); }
-    .btn-tool.active-mode { background: rgba(212, 175, 55, 0.15); border-color: var(--accent-gold); color: var(--accent-gold); }
 
     .instructions {
       font-size: 11px; color: var(--accent-gold); text-align: center;
       margin-bottom: 12px; display: none; background: rgba(212, 175, 55, 0.08);
-      padding: 6px; border-radius: 6px;
+      padding: 8px; border-radius: 6px; line-height: 1.4;
     }
 
     .form-group { margin-bottom: 16px; }
-    .label-title { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+    .label-title { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
     
-    .tiles-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .tiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    
+    /* Wspólne kafelki dla wyboru materiału i stylu */
+    .option-tile {
+      background: var(--input-bg); border: 2px solid var(--card-border);
+      border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: center;
+      gap: 10px; cursor: pointer; transition: all 0.2s ease; text-align: left;
     }
-    .material-tile {
-      background: var(--input-bg);
-      border: 2px solid var(--card-border);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .material-tile:hover { border-color: rgba(212, 175, 55, 0.5); }
-    .material-tile.active {
-      border-color: var(--accent-gold);
-      background: rgba(212, 175, 55, 0.08);
-    }
-    .tile-color {
-      width: 24px; height: 24px; border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3); flex-shrink: 0;
-    }
+    .option-tile.center-text { flex-direction: column; text-align: center; gap: 4px; padding: 10px; }
+    .option-tile:hover { border-color: rgba(212, 175, 55, 0.5); }
+    .option-tile.active { border-color: var(--accent-gold); background: rgba(212, 175, 55, 0.08); }
+    
+    .tile-color { width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); flex-shrink: 0; }
     .tile-color.gold { background: linear-gradient(135deg, #f3ce5a 0%, #d4af37 50%, #aa820a 100%); }
     .tile-color.silver { background: linear-gradient(135deg, #ffffff 0%, #cfd5db 50%, #8a94a0 100%); }
     .tile-text { font-size: 13px; font-weight: 600; color: var(--text-main); }
@@ -184,28 +153,27 @@
       </div>
     </div>
 
-    <div class="instructions" id="hint">🖌️ Przybliż lupą i zamaluj dokładnie wybrane zęby</div>
+    <div class="instructions" id="hint">
+      🖐️ <b>Dwa palce</b>: powiększanie i przesuwanie<br>
+      🖌️ <b>Jeden palec</b>: malowanie zębów
+    </div>
     
     <div class="tools-bar" id="toolsBar">
-      <button type="button" class="btn-tool active-mode" id="modeDrawBtn">🖌️ Maluj</button>
-      <button type="button" class="btn-tool" id="modePanBtn">🖐️ Przesuń</button>
-      <button type="button" class="btn-tool" id="zoomInBtn">🔍➕</button>
-      <button type="button" class="btn-tool" id="zoomOutBtn">🔍➖</button>
-      <button type="button" class="btn-tool" id="clearBtn">↺ Czyść</button>
-      <button type="button" class="btn-tool" id="resetBtn">📁 Nowe</button>
+      <button type="button" class="btn-tool" id="clearBtn">↺ Wyczyść maskę</button>
+      <button type="button" class="btn-tool" id="resetBtn">📁 Zmień zdjęcie</button>
     </div>
 
     <div class="form-group">
       <span class="label-title">Wybierz materiał</span>
       <div class="tiles-grid">
-        <div class="material-tile active" data-value="14k shiny gold" id="tileGold">
+        <div class="option-tile active material-tile" data-value="14k shiny gold">
           <div class="tile-color gold"></div>
           <div>
             <span class="tile-text">Złoto</span>
             <span class="tile-sub">14K Gold</span>
           </div>
         </div>
-        <div class="material-tile" data-value="925 sterling silver" id="tileSilver">
+        <div class="option-tile material-tile" data-value="925 sterling silver">
           <div class="tile-color silver"></div>
           <div>
             <span class="tile-text">Srebro</span>
@@ -215,9 +183,23 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <span class="label-title">Wybierz styl</span>
+      <div class="tiles-grid">
+        <div class="option-tile center-text active style-tile" data-value="full">
+          <span class="tile-text">Pełne Zęby</span>
+          <span class="tile-sub">Solid Caps</span>
+        </div>
+        <div class="option-tile center-text style-tile" data-value="open">
+          <span class="tile-text">Ramki</span>
+          <span class="tile-sub">Open Face</span>
+        </div>
+      </div>
+    </div>
+
     <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
 
-    <div id="statusText">AI generuje fotorealistyczną biżuterię...</div>
+    <div id="statusText">AI renderuje biżuterię klasy premium...</div>
   </div>
 
   <script>
@@ -237,15 +219,22 @@
     let loadedImage = null;
     let originalNaturalWidth = 0;
     let originalNaturalHeight = 0;
+    
+    // Gesty mobilne
     let isDrawing = false;
     let isPanning = false;
-    let currentMode = 'draw';
     let scale = 1;
     let panX = 0;
     let panY = 0;
-    let startX = 0;
-    let startY = 0;
+    let initialDistance = 0;
+    let initialScale = 1;
+    let initialPanX = 0;
+    let initialPanY = 0;
+    let initialCenterX = 0;
+    let initialCenterY = 0;
+
     let selectedMaterial = "14k shiny gold";
+    let selectedStyle = "full";
 
     document.querySelectorAll('.material-tile').forEach(tile => {
       tile.addEventListener('click', () => {
@@ -255,21 +244,12 @@
       });
     });
 
-    const modeDrawBtn = document.getElementById('modeDrawBtn');
-    const modePanBtn = document.getElementById('modePanBtn');
-
-    modeDrawBtn.addEventListener('click', () => {
-      currentMode = 'draw';
-      modeDrawBtn.classList.add('active-mode');
-      modePanBtn.classList.remove('active-mode');
-      canvasContainer.classList.remove('pan-mode');
-    });
-
-    modePanBtn.addEventListener('click', () => {
-      currentMode = 'pan';
-      modePanBtn.classList.add('active-mode');
-      modeDrawBtn.classList.remove('active-mode');
-      canvasContainer.classList.add('pan-mode');
+    document.querySelectorAll('.style-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        document.querySelectorAll('.style-tile').forEach(t => t.classList.remove('active'));
+        tile.classList.add('active');
+        selectedStyle = tile.getAttribute('data-value');
+      });
     });
 
     imageInput.addEventListener('change', (e) => {
@@ -280,7 +260,6 @@
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          // Zapisujemy oryginalne wymiary wejściowe, aby zachować je bez zmian na końcu
           originalNaturalWidth = img.width;
           originalNaturalHeight = img.height;
 
@@ -335,9 +314,7 @@
         }
       }, 50);
 
-      scale = 1;
-      panX = 0;
-      panY = 0;
+      scale = 1; panX = 0; panY = 0;
       updateTransform();
 
       document.getElementById('uploadPlaceholder').style.display = 'none';
@@ -345,11 +322,6 @@
       canvasViewport.style.display = 'block';
       document.getElementById('hint').style.display = 'block';
       document.getElementById('toolsBar').style.display = 'flex';
-      
-      currentMode = 'draw';
-      modeDrawBtn.classList.add('active-mode');
-      modePanBtn.classList.remove('active-mode');
-      canvasContainer.classList.remove('pan-mode');
     }
 
     function clearMasks() {
@@ -372,78 +344,97 @@
       clearMasks();
     });
 
-    document.getElementById('zoomInBtn').addEventListener('click', () => {
-      scale = Math.min(scale + 0.5, 4.0);
-      updateTransform();
-    });
-    document.getElementById('zoomOutBtn').addEventListener('click', () => {
-      scale = Math.max(scale - 0.5, 1.0);
-      if (scale === 1) { panX = 0; panY = 0; }
-      updateTransform();
-    });
-
     function updateTransform() {
-      if (scale === 1) { panX = 0; panY = 0; }
       canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
-    window.addEventListener('resize', () => {
-      if (!loadedImage) return;
-      const rect = previewImageElement.getBoundingClientRect();
-      if (rect.width > 0) {
-        maskCanvas.width = rect.width;
-        maskCanvas.height = rect.height;
-      }
-    });
-
-    function getCanvasCoords(e) {
+    // Bezproblemowe mapowanie koordynatów - getBoundingClientRect uwzględnia wszystko
+    function getCanvasCoords(clientX, clientY) {
       const rect = maskCanvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      const x = ((clientX - rect.left) / rect.width) * maskCanvas.width;
+      const y = ((clientY - rect.top) / rect.height) * maskCanvas.height;
       return { x, y };
     }
 
-    function pointerDown(e) {
-      if (!loadedImage) return;
+    // Obsługa 2 palców (Zoom/Pan) i 1 palca (Malowanie)
+    maskCanvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      
-      if (currentMode === 'pan') {
+      if (!loadedImage) return;
+
+      if (e.touches.length === 2) {
+        isDrawing = false;
         isPanning = true;
-        startX = (e.touches ? e.touches[0].clientX : e.clientX) - panX;
-        startY = (e.touches ? e.touches[0].clientY : e.clientY) - panY;
-      } else {
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        initialDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        initialScale = scale;
+        initialCenterX = (t1.clientX + t2.clientX) / 2;
+        initialCenterY = (t1.clientY + t2.clientY) / 2;
+        initialPanX = panX;
+        initialPanY = panY;
+      } else if (e.touches.length === 1) {
         isDrawing = true;
-        draw(e);
+        isPanning = false;
+        draw(e.touches[0].clientX, e.touches[0].clientY, false);
       }
-    }
+    }, {passive: false});
 
-    function pointerMove(e) {
-      if (isPanning) {
-        e.preventDefault();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        panX = clientX - startX;
-        panY = clientY - startY;
+    maskCanvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!loadedImage) return;
+
+      if (e.touches.length === 2 && isPanning) {
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const currentDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        const currentCenterX = (t1.clientX + t2.clientX) / 2;
+        const currentCenterY = (t1.clientY + t2.clientY) / 2;
+
+        const scaleRatio = currentDistance / initialDistance;
+        scale = Math.min(Math.max(initialScale * scaleRatio, 1.0), 6.0); 
+
+        const ratio = scale / initialScale;
+        panX = currentCenterX - (initialCenterX - initialPanX) * ratio;
+        panY = currentCenterY - (initialCenterY - initialPanY) * ratio;
+
+        if (scale === 1) { panX = 0; panY = 0; }
         updateTransform();
-      } else if (isDrawing) {
-        e.preventDefault();
-        draw(e);
+
+      } else if (e.touches.length === 1 && isDrawing) {
+        draw(e.touches[0].clientX, e.touches[0].clientY, true);
       }
-    }
+    }, {passive: false});
 
-    function pointerUp() {
-      isDrawing = false;
-      isPanning = false;
-      maskCtx.beginPath();
-      hiddenMaskCtx.beginPath();
-    }
+    maskCanvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      if (e.touches.length < 2) isPanning = false;
+      if (e.touches.length === 0 && isDrawing) {
+        isDrawing = false;
+        maskCtx.beginPath();
+        hiddenMaskCtx.beginPath();
+      }
+    });
 
-    function draw(e) {
-      const pos = getCanvasCoords(e);
-      const brushSize = Math.max(maskCanvas.width * 0.02, 10) / Math.sqrt(scale);
+    // Wsparcie dla myszy (Desktopy)
+    maskCanvas.addEventListener('mousedown', (e) => {
+      if (!loadedImage) return;
+      isDrawing = true;
+      draw(e.clientX, e.clientY, false);
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (isDrawing) draw(e.clientX, e.clientY, true);
+    });
+    window.addEventListener('mouseup', () => {
+      if (isDrawing) {
+        isDrawing = false;
+        maskCtx.beginPath();
+        hiddenMaskCtx.beginPath();
+      }
+    });
+
+    function draw(clientX, clientY, isContinuous) {
+      const pos = getCanvasCoords(clientX, clientY);
+      const brushSize = Math.max(maskCanvas.width * 0.015, 8) / Math.sqrt(scale);
 
       maskCtx.lineWidth = brushSize;
       maskCtx.lineCap = 'round';
@@ -468,14 +459,6 @@
       hiddenMaskCtx.moveTo(hiddenX, hiddenY);
     }
 
-    maskCanvas.addEventListener('mousedown', pointerDown);
-    window.addEventListener('mousemove', pointerMove);
-    window.addEventListener('mouseup', pointerUp);
-
-    maskCanvas.addEventListener('touchstart', pointerDown, {passive: false});
-    window.addEventListener('touchmove', pointerMove, {passive: false});
-    window.addEventListener('touchend', pointerUp);
-
     document.getElementById('generateBtn').addEventListener('click', async () => {
       if (!loadedImage) { alert('Wgraj zdjęcie!'); return; }
 
@@ -495,7 +478,8 @@
           body: JSON.stringify({
             image: imageB64,
             mask: maskB64,
-            material: selectedMaterial
+            material: selectedMaterial,
+            style: selectedStyle
           })
         });
 
@@ -509,7 +493,6 @@
 
         if (!response.ok) throw new Error(data.error || 'Błąd generowania');
 
-        // Wymuszenie idealnego zachowania oryginalnych wymiarów (wielkości i proporcji) wejściowych
         const resultImg = new Image();
         resultImg.crossOrigin = "anonymous";
         resultImg.onload = () => {
@@ -521,9 +504,7 @@
           finalCtx.drawImage(resultImg, 0, 0, originalNaturalWidth, originalNaturalHeight);
           
           loadedImage = new Image();
-          loadedImage.onload = () => {
-            setupViewer();
-          };
+          loadedImage.onload = () => { setupViewer(); };
           loadedImage.src = finalCanvas.toDataURL('image/jpeg', 0.95);
         };
         resultImg.src = data.image;
