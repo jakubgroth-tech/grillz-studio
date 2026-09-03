@@ -9,7 +9,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { image, mask, material, style, position } = JSON.parse(event.body);
+    const { image, mask } = JSON.parse(event.body);
 
     if (!image || !mask) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Brak zdjęcia lub maski.' }) };
@@ -20,21 +20,13 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    const materialName = material === 'gold' ? '14k solid yellow gold' : '925 sterling silver';
-    
-    let styleDesc = '';
-    if (style === 'open') {
-      styleDesc = `Open-face window grillz style: luxury artisan ${materialName} metallic frames outlining exclusively the enamel and edges of the ${position} teeth, leaving the center of each tooth hollow, uncovered, and exposing natural teeth.`;
-    } else {
-      styleDesc = `Solid full-cap custom grillz style: polished solid ${materialName} dental caps completely encasing the ${position} teeth.`;
-    }
+    // Ekstremalnie dopracowany prompt wymuszający najwyższą jakość jubilerską i zero dotykania dziąseł
+    const promptText = `Masterpiece macro jewelry photography of custom-fitted 14k solid yellow gold grillz covering both upper and lower teeth. Flawless mirror-polished finish with deep, rich golden reflections, highly detailed individual tooth caps separated by crisp artisan contour lines. 
+STRICT ANATOMICAL RULE: The gold grillz must cover exclusively the enamel of the teeth and must NEVER touch, overlap, or cover the pink gums. The margins terminate perfectly at the natural gum line.
+PHOTOREALISTIC HARMONY: The gold metal naturally reflects the exact lighting direction, color temperature, skin tones, and ambient brightness of the user's face photo, creating a seamless, organic integration with zero overlay artifacts. Lips, skin, and background remain 100% untouched.`;
 
-    // Dopracowany prompt z mocniejszym naciskiem na naturalne cieniowanie i brak kontaktu z dziąsłami
-    const promptText = `High-end macro jewelry photography of custom hip-hop dental grillz. ${styleDesc}
-STRICT ANATOMICAL BOUNDARY: The grillz must fit ONLY over the teeth enamel. Absolutely zero metal can touch, overlap, or cover the pink gums. The metal edges must terminate sharply at the natural gum line.
-PHOTOREALISTIC BLENDING: The metallic surface must naturally reflect the surrounding ambient light, skin tones, and color temperature of the user's mouth, ensuring seamless organic blending with zero look of a pasted overlay.`;
-
-    const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
+    // Używamy najnowocześniejszego i najpotężniejszego modelu FLUX Inpainting na fal.ai
+    const response = await fetch('https://fal.run/fal-ai/flux/dev/inpainting', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -44,8 +36,9 @@ PHOTOREALISTIC BLENDING: The metallic surface must naturally reflect the surroun
         image_url: image,
         mask_url: mask,
         prompt: promptText,
-        strength: 0.88, // Idealna siła dla naturalnego wtapiania cieni w usta i zęby
-        guidance_scale: 8.0
+        num_inference_steps: 30,
+        guidance_scale: 3.5,
+        strength: 0.86
       })
     });
 
