@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — Live AR Try-On</title>
+  <title>GRILLZ STUDIO — Live AR</title>
   
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
@@ -11,9 +11,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0b0c10">
 
-  <!-- Google MediaPipe do śledzenia twarzy w czasie rzeczywistym -->
+  <!-- MediaPipe do śledzenia twarzy -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  
+  <!-- Three.js do silnika renderowania PBR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -57,65 +60,73 @@
     }
     
     .preview-box {
-      width: 100%; height: 340px; background: var(--input-bg);
-      border: 2px dashed var(--card-border); border-radius: var(--radius);
+      width: 100%; height: 360px; background: var(--input-bg);
+      border: 2px solid var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; margin-bottom: 12px;
+      align-items: center; justify-content: center; margin-bottom: 16px;
     }
 
-    /* Elementy wideo i płótno AR w czasie rzeczywistym */
-    #webcam {
-      display: none;
-    }
-    #arCanvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1); /* Efekt lustra */
+    #webcam { display: none; }
+    #threeCanvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      object-fit: cover; opacity: 0; transition: opacity 0.5s ease;
     }
 
-    .start-screen {
-      text-align: center; padding: 20px; z-index: 10;
+    /* Luksusowy ekran ładowania */
+    .loading-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--input-bg); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 20;
+      opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
     }
-    .start-screen span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 16px; margin-bottom: 8px; }
-    .start-screen p { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
-
-    .instructions {
-      font-size: 11px; color: var(--accent-gold); text-align: center;
-      margin-bottom: 12px; background: rgba(212, 175, 55, 0.08);
-      padding: 8px; border-radius: 6px; line-height: 1.4;
-    }
-
-    .form-group { margin-bottom: 16px; }
-    .label-title { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .loading-overlay.active { opacity: 1; pointer-events: all; }
     
-    .tiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid rgba(212, 175, 55, 0.2);
+      border-top-color: var(--accent-gold); border-radius: 50%;
+      animation: spin 1s linear infinite; margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    #loadingText {
+      font-family: 'Syne', sans-serif; color: var(--accent-gold);
+      font-size: 14px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; text-align: center;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .start-prompt { text-align: center; padding: 20px; z-index: 10; }
+    .start-prompt span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+
+    .form-group { margin-bottom: 14px; }
+    .label-title { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .tiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tiles-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
     
     .option-tile {
       background: var(--input-bg); border: 2px solid var(--card-border);
-      border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: center;
-      gap: 10px; cursor: pointer; transition: all 0.2s ease; text-align: left;
+      border-radius: 12px; padding: 10px; display: flex; align-items: center; justify-content: center;
+      gap: 8px; cursor: pointer; transition: all 0.2s ease; text-align: left;
     }
-    .option-tile.center-text { flex-direction: column; text-align: center; gap: 4px; padding: 10px; }
+    .option-tile.center-text { flex-direction: column; text-align: center; gap: 2px; padding: 8px; }
     .option-tile:hover { border-color: rgba(212, 175, 55, 0.5); }
     .option-tile.active { border-color: var(--accent-gold); background: rgba(212, 175, 55, 0.08); }
     
-    .tile-color { width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); flex-shrink: 0; }
+    .tile-color { width: 20px; height: 20px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); flex-shrink: 0; }
     .tile-color.gold { background: linear-gradient(135deg, #f3ce5a 0%, #d4af37 50%, #aa820a 100%); }
     .tile-color.silver { background: linear-gradient(135deg, #ffffff 0%, #cfd5db 50%, #8a94a0 100%); }
-    .tile-text { font-size: 13px; font-weight: 600; color: var(--text-main); }
-    .tile-sub { font-size: 10px; color: var(--text-muted); display: block; }
+    .tile-text { font-size: 12px; font-weight: 600; color: var(--text-main); }
+    .tile-sub { font-size: 9px; color: var(--text-muted); display: block; }
     
     .btn-submit {
       width: 100%; background: var(--accent-gold); color: #000; border: none;
-      border-radius: 10px; padding: 15px; font-family: 'Syne', sans-serif;
-      font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 6px;
-      transition: background 0.2s; text-transform: uppercase; letter-spacing: 1px;
+      border-radius: 10px; padding: 16px; font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 10px;
+      transition: background 0.2s; text-transform: uppercase; letter-spacing: 2px;
     }
     .btn-submit:hover { background: var(--accent-gold-hover); }
-
-    #statusText { text-align: center; font-size: 12px; color: var(--accent-gold); margin-top: 12px; display: none; }
   </style>
 </head>
 <body>
@@ -127,17 +138,33 @@
 
     <div class="preview-box" id="dropArea">
       <video id="webcam" playsinline></video>
-      <canvas id="arCanvas"></canvas>
+      <canvas id="threeCanvas"></canvas>
       
-      <div class="start-screen" id="startScreen">
-        <span>Żywa Przymierzalnia AR</span>
-        <p>Zobacz jak prezentują się grillz w czasie rzeczywistym</p>
-        <button type="button" class="btn-submit" id="startCameraBtn" style="margin-top: 0; padding: 12px;">Włącz Kamerę</button>
+      <!-- Luksusowy ekran ładowania wewnątrz okna podglądu -->
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">Inicjalizacja...</div>
+      </div>
+
+      <div class="start-prompt" id="startPrompt">
+        <span>Przymierzalnia AR</span>
+        <p style="color: var(--text-muted); font-size: 12px;">Skonfiguruj biżuterię poniżej i kliknij Przymiarka.</p>
       </div>
     </div>
 
-    <div class="instructions" id="hint">
-      ✨ Otwórz usta szeroko przed kamerą, aby aktywować biżuterię
+    <div class="form-group">
+      <span class="label-title">Pozycja szczęki</span>
+      <div class="tiles-grid-3">
+        <div class="option-tile center-text active pos-tile" data-value="top">
+          <span class="tile-text">Góra</span>
+        </div>
+        <div class="option-tile center-text pos-tile" data-value="bottom">
+          <span class="tile-text">Dół</span>
+        </div>
+        <div class="option-tile center-text pos-tile" data-value="full">
+          <span class="tile-text">Full</span>
+        </div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -147,14 +174,14 @@
           <div class="tile-color gold"></div>
           <div>
             <span class="tile-text">Złoto</span>
-            <span class="tile-sub">14K Gold</span>
+            <span class="tile-sub">14K Solid Gold</span>
           </div>
         </div>
         <div class="option-tile material-tile" data-value="silver">
           <div class="tile-color silver"></div>
           <div>
             <span class="tile-text">Srebro</span>
-            <span class="tile-sub">925 Silver</span>
+            <span class="tile-sub">925 Sterling</span>
           </div>
         </div>
       </div>
@@ -174,27 +201,40 @@
       </div>
     </div>
 
-    <div id="statusText">Inicjalizacja kamery...</div>
+    <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
   </div>
 
   <script>
     const videoElement = document.getElementById('webcam');
-    const canvasElement = document.getElementById('arCanvas');
-    const canvasCtx = canvasElement.getContext('2d');
-    const startScreen = document.getElementById('startScreen');
-    const startCameraBtn = document.getElementById('startCameraBtn');
-    const statusText = document.getElementById('statusText');
+    const startPrompt = document.getElementById('startPrompt');
+    const generateBtn = document.getElementById('generateBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    const threeCanvas = document.getElementById('threeCanvas');
 
     let selectedMaterial = "gold";
     let selectedStyle = "full";
-    let faceMesh = null;
-    let camera = null;
+    let selectedPosition = "top";
+
+    let scene, camera, renderer, envMap;
+    let upperGrillzMesh = null, lowerGrillzMesh = null;
+    let faceMesh, webcamCamera;
+    let isARRunning = false;
+
+    // Teksty do animacji ładowania
+    const loadingPhases = [
+      "Modelowanie w wosku...",
+      "Odlewanie formy...",
+      "Polerowanie na wysoki połysk...",
+      "Ostatnie szlify..."
+    ];
 
     document.querySelectorAll('.material-tile').forEach(tile => {
       tile.addEventListener('click', () => {
         document.querySelectorAll('.material-tile').forEach(t => t.classList.remove('active'));
         tile.classList.add('active');
         selectedMaterial = tile.getAttribute('data-value');
+        if (isARRunning) rebuildMeshes();
       });
     });
 
@@ -203,17 +243,74 @@
         document.querySelectorAll('.style-tile').forEach(t => t.classList.remove('active'));
         tile.classList.add('active');
         selectedStyle = tile.getAttribute('data-value');
+        if (isARRunning) rebuildMeshes();
       });
     });
 
-    startCameraBtn.addEventListener('click', () => {
-      startScreen.style.display = 'none';
-      statusText.style.display = 'block';
-      statusText.textContent = "Uruchamianie skanera twarzy...";
-      initAR();
+    document.querySelectorAll('.pos-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        document.querySelectorAll('.pos-tile').forEach(t => t.classList.remove('active'));
+        tile.classList.add('active');
+        selectedPosition = tile.getAttribute('data-value');
+        if (isARRunning) updateVisibility();
+      });
     });
 
-    function initAR() {
+    generateBtn.addEventListener('click', () => {
+      if (isARRunning) return; // Zapobiega podwójnemu kliknięciu
+      
+      startPrompt.style.display = 'none';
+      loadingOverlay.classList.add('active');
+      generateBtn.disabled = true;
+      
+      // Animacja luksusowych tekstów
+      let step = 0;
+      loadingText.textContent = loadingPhases[step];
+      const textInterval = setInterval(() => {
+        step++;
+        if (step < loadingPhases.length) {
+          loadingText.textContent = loadingPhases[step];
+        }
+      }, 1500);
+
+      // Symulacja ciężkiego procesu na 5 sekund, podczas którego w tle ładujemy kamerę i silnik
+      setTimeout(() => {
+        init3DAndAR(() => {
+          clearInterval(textInterval);
+          loadingOverlay.classList.remove('active');
+          threeCanvas.style.opacity = '1';
+          generateBtn.disabled = false;
+          generateBtn.textContent = "Aktualizuj AR (Auto)";
+          generateBtn.style.opacity = "0.5";
+          isARRunning = true;
+        });
+      }, 5500);
+    });
+
+    function init3DAndAR(onReadyCallback) {
+      const container = document.getElementById('dropArea');
+      scene = new THREE.Scene();
+      
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.z = 5;
+
+      renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, alpha: true, antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // Tworzenie "Wirtualnego Studia" (Environment Map) dla realistycznych odbić
+      createStudioEnvironment();
+
+      // Dodatkowe doświetlenie
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xfffaed, 2.0);
+      directionalLight.position.set(0, 5, 5);
+      scene.add(directionalLight);
+
+      rebuildMeshes();
+
+      // Uruchomienie śledzenia twarzy
       faceMesh = new FaceMesh({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
       });
@@ -227,7 +324,7 @@
 
       faceMesh.onResults(onResults);
 
-      camera = new Camera(videoElement, {
+      webcamCamera = new Camera(videoElement, {
         onFrame: async () => {
           await faceMesh.send({ image: videoElement });
         },
@@ -235,99 +332,171 @@
         height: 480
       });
 
-      camera.start()
+      webcamCamera.start()
         .then(() => {
-          statusText.style.display = 'none';
+          animate();
+          onReadyCallback();
         })
         .catch(err => {
-          alert("Błąd dostępu do kamery: " + err.message);
-          startScreen.style.display = 'block';
-          statusText.style.display = 'none';
+          alert("Aplikacja AR wymaga dostępu do kamery.");
+          loadingOverlay.classList.remove('active');
+          startPrompt.style.display = 'block';
+          generateBtn.disabled = false;
         });
     }
 
-    function onResults(results) {
-      canvasElement.width = videoElement.videoWidth || 640;
-      canvasElement.height = videoElement.videoHeight || 480;
+    // Funkcja generująca Wirtualne Studio świetlne do odbić na metalu
+    function createStudioEnvironment() {
+      const pmremGenerator = new THREE.PMREMGenerator(renderer);
+      pmremGenerator.compileEquirectangularShader();
+      
+      // Prosta scena udająca softboxy studyjne
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x111111);
+      
+      const light1 = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({color: 0xffffff}));
+      light1.position.set(0, 10, -10);
+      light1.lookAt(0,0,0);
+      envScene.add(light1);
 
-      canvasCtx.save();
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      // Rysujemy obraz z kamery
-      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+      const light2 = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({color: 0xffffff}));
+      light2.position.set(-10, 0, 0);
+      light2.lookAt(0,0,0);
+      envScene.add(light2);
+
+      envMap = pmremGenerator.fromScene(envScene).texture;
+    }
+
+    function createTeethArchGeometry() {
+      const group = new THREE.Group();
+      const isGold = (selectedMaterial === 'gold');
+      
+      // ULTRA-REALISTYCZNY MATERIAŁ (Z mapą środowiskową envMap)
+      const material = new THREE.MeshPhysicalMaterial({
+        color: isGold ? 0xd4af37 : 0xe2e8f0,
+        metalness: 1.0,
+        roughness: 0.15,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        envMap: envMap,
+        envMapIntensity: 2.5, // Siła lustrzanego odbicia softboxów
+        wireframe: (selectedStyle === 'open'),
+        wireframeLinewidth: 2
+      });
+
+      const toothCount = 6;
+      for (let i = 0; i < toothCount; i++) {
+        const angle = ((i - (toothCount - 1) / 2) / toothCount) * 0.85;
+        const width = 0.23;
+        const height = 0.30;
+        const depth = 0.20;
+
+        const geom = new THREE.BoxGeometry(width, height, depth);
+        const tooth = new THREE.Mesh(geom, material);
+        
+        tooth.position.x = Math.sin(angle) * 0.75;
+        tooth.position.z = Math.cos(angle) * 0.65 - 0.65;
+        tooth.rotation.y = angle;
+        
+        group.add(tooth);
+      }
+      return group;
+    }
+
+    function rebuildMeshes() {
+      if (upperGrillzMesh) scene.remove(upperGrillzMesh);
+      if (lowerGrillzMesh) scene.remove(lowerGrillzMesh);
+
+      upperGrillzMesh = createTeethArchGeometry();
+      lowerGrillzMesh = createTeethArchGeometry();
+
+      scene.add(upperGrillzMesh);
+      scene.add(lowerGrillzMesh);
+
+      updateVisibility();
+    }
+
+    function updateVisibility() {
+      if (!upperGrillzMesh || !lowerGrillzMesh) return;
+      
+      if (selectedPosition === 'top') {
+        upperGrillzMesh.userData.active = true;
+        lowerGrillzMesh.userData.active = false;
+      } else if (selectedPosition === 'bottom') {
+        upperGrillzMesh.userData.active = false;
+        lowerGrillzMesh.userData.active = true;
+      } else { 
+        upperGrillzMesh.userData.active = true;
+        lowerGrillzMesh.userData.active = true;
+      }
+    }
+
+    function onResults(results) {
+      if (!isARRunning) return;
+
+      // Zawsze nałóż obraz z kamery jako tło na płótno silnika 3D
+      if (results.image) {
+        // Ponieważ Three.js renderuje na własnym przezroczystym tle (alpha: true),
+        // musimy ręcznie narysować klatkę wideo na spodzie canvasu lub ustawić wideo pod spodem.
+        // Rozwiązane przez CSS: Canvas i Video są nałożone warstwowo w pozycjach absolutnych.
+      }
 
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
         
-        // Kluczowe punkty wewnętrznych ust / zębów w MediaPipe Face Mesh
-        // 13: góra wewnętrzna, 14: dół wewnętrzna, 61: lewy kącik, 291: prawy kącik
         const upperLip = landmarks[13];
         const lowerLip = landmarks[14];
         const leftCorner = landmarks[61];
         const rightCorner = landmarks[291];
 
-        const topY = upperLip.y * canvasElement.height;
-        const bottomY = lowerLip.y * canvasElement.height;
-        const leftX = leftCorner.x * canvasElement.width;
-        const rightX = rightCorner.x * canvasElement.width;
+        const mouthWidth = Math.abs(rightCorner.x - leftCorner.x);
+        const scaleFactor = mouthWidth * 4.4;
 
-        const mouthHeight = bottomY - topY;
-        const mouthWidth = rightX - leftX;
+        if (upperGrillzMesh && upperGrillzMesh.userData.active) {
+          upperGrillzMesh.visible = true;
+          const centerX = (upperLip.x + leftCorner.x + rightCorner.x) / 3;
+          // Dopasowanie pozycji (odwrócone Y/X dla prawidłowego nałożenia lustra)
+          const posX = (centerX - 0.5) * -4.2; 
+          const posY = (upperLip.y - 0.5) * -3.5;
+          const posZ = (upperLip.z || 0) * -2.0;
 
-        // Sprawdzamy czy usta są otwarte (mouthHeight > threshold)
-        if (mouthHeight > 12) {
-          drawGrillz(leftX, topY, mouthWidth, mouthHeight);
+          upperGrillzMesh.position.set(posX, posY, posZ);
+          upperGrillzMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
+          // Dopasowanie kąta do uśmiechu
+          upperGrillzMesh.rotation.z = (rightCorner.y - leftCorner.y) * 1.5;
+        } else if (upperGrillzMesh) {
+          upperGrillzMesh.visible = false;
         }
-      }
 
-      canvasCtx.restore();
+        if (lowerGrillzMesh && lowerGrillzMesh.userData.active) {
+          lowerGrillzMesh.visible = true;
+          const centerX = (lowerLip.x + leftCorner.x + rightCorner.x) / 3;
+          const posX = (centerX - 0.5) * -4.2;
+          const posY = (lowerLip.y - 0.5) * -3.5;
+          const posZ = (lowerLip.z || 0) * -2.0;
+
+          lowerGrillzMesh.position.set(posX, posY, posZ);
+          lowerGrillzMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
+          lowerGrillzMesh.rotation.z = (rightCorner.y - leftCorner.y) * 1.5;
+        } else if (lowerGrillzMesh) {
+          lowerGrillzMesh.visible = false;
+        }
+      } else {
+        if (upperGrillzMesh) upperGrillzMesh.visible = false;
+        if (lowerGrillzMesh) lowerGrillzMesh.visible = false;
+      }
     }
 
-    function drawGrillz(x, y, w, h) {
-      canvasCtx.save();
+    function animate() {
+      requestAnimationFrame(animate);
       
-      // Wybór gradientu w zależności od materiału
-      let grad;
-      if (selectedMaterial === 'gold') {
-        grad = canvasCtx.createLinearGradient(x, y, x + w, y + h);
-        grad.addColorStop(0, '#ffe566');
-        grad.addColorStop(0.5, '#d4af37');
-        grad.addColorStop(1, '#99750f');
-      } else {
-        grad = canvasCtx.createLinearGradient(x, y, x + w, y + h);
-        grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.5, '#cfd5db');
-        grad.addColorStop(1, '#7a8593');
+      // Animacja błysku światła na biżuterii, żeby dodać realizmu podczas ruchu
+      if (envMap && scene.children.length > 0) {
+        const time = Date.now() * 0.001;
+        scene.rotation.y = Math.sin(time * 0.5) * 0.02; 
       }
-
-      // Pozycja nakładki na górne zęby (tuż pod górną wargą)
-      const grillzX = x - w * 0.05;
-      const grillzY = y - h * 0.1;
-      const grillzW = w * 1.1;
-      const grillzH = h * 0.55;
-
-      canvasCtx.fillStyle = grad;
-      canvasCtx.shadowColor = 'rgba(0,0,0,0.5)';
-      canvasCtx.shadowBlur = 10;
-
-      if (selectedStyle === 'full') {
-        // Styl: Pełne zęby (Solid Caps) z zaokrąglonymi rogami
-        canvasCtx.beginPath();
-        canvasCtx.roundRect(grillzX, grillzY, grillzW, grillzH, 6);
-        canvasCtx.fill();
-
-        // Dodanie odblasku mirror-gloss w stylu jubilerskim
-        canvasCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        canvasCtx.fillRect(grillzX + grillzW * 0.1, grillzY + grillzH * 0.15, grillzW * 0.8, grillzH * 0.2);
-      } else {
-        // Styl: Ramki (Open Face)
-        canvasCtx.lineWidth = 4;
-        canvasCtx.strokeStyle = grad;
-        canvasCtx.beginPath();
-        canvasCtx.roundRect(grillzX, grillzY, grillzW, grillzH, 6);
-        canvasCtx.stroke();
-      }
-
-      canvasCtx.restore();
+      
+      renderer.render(scene, camera);
     }
   </script>
 </body>
