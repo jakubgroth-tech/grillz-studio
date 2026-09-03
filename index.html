@@ -3,330 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — Master Edition</title>
+  <title>GRILLZ STUDIO — LIVE AR AR</title>
   
-  <link rel="icon" type="image/png" href="icon.png">
-  <link rel="apple-touch-icon" href="icon.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0b0c10">
-
-  <!-- Google MediaPipe do automatycznej maski pełnego łuku -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <!-- Three.js & Loaders -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+
   <style>
-    :root {
-      --bg-color: #0b0c10;
-      --card-bg: rgba(22, 24, 31, 0.95);
-      --card-border: rgba(255, 255, 255, 0.12);
-      --accent-gold: #d4af37;
-      --accent-gold-hover: #f3ce5a;
-      --text-main: #f0f2f5;
-      --text-muted: #8a8f9e;
-      --input-bg: #12141c;
-      --radius: 16px;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--bg-color); color: var(--text-main);
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
-      overscroll-behavior-y: contain;
-    }
-    .container {
-      width: 100%; max-width: 440px; background: var(--card-bg);
-      border: 1px solid var(--card-border); border-radius: var(--radius);
-      padding: 24px 20px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
-      position: relative; overflow: hidden;
+    body, html {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      background-color: #0b0c10; overflow: hidden; font-family: 'Syne', sans-serif;
     }
     
-    .container::before {
-      content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      background-image: url('logo.png'); background-repeat: repeat;
-      background-size: 70px; opacity: 0.035; pointer-events: none; z-index: 0;
-    }
-    .container > * { position: relative; z-index: 1; }
-
-    .header { text-align: center; margin-bottom: 24px; }
-    .logo { 
-      font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; 
-      color: var(--accent-gold); letter-spacing: 2px; text-transform: uppercase; 
-    }
-    
-    .preview-box {
-      width: 100%; height: 380px; background: var(--input-bg);
-      border: 2px dashed var(--card-border); border-radius: var(--radius);
-      position: relative; overflow: hidden; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; margin-bottom: 20px; cursor: pointer;
-    }
-    .preview-box input[type="file"] {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 20;
-    }
-    .upload-text { text-align: center; color: var(--text-muted); font-size: 14px; padding: 20px; z-index: 5; }
-    .upload-text span { display: block; color: var(--accent-gold); font-weight: 600; font-size: 16px; margin-bottom: 4px; }
-
-    #previewImage {
+    /* Wideo z kamery (Tło) */
+    .input_video {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: contain; display: none; z-index: 10;
+      object-fit: cover; z-index: 1; transform: scaleX(-1); /* Odbicie lustrzane */
     }
-
-    .btn-reset {
-      position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.7);
-      color: var(--text-main); border: 1px solid var(--card-border); padding: 6px 12px;
-      font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; z-index: 25;
-      display: none; text-transform: uppercase; transition: all 0.2s;
-    }
-    .btn-reset:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
-
-    .loading-overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(18, 20, 28, 0.96); display: flex; flex-direction: column;
-      align-items: center; justify-content: center; z-index: 30;
-      opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
-    }
-    .loading-overlay.active { opacity: 1; pointer-events: all; }
     
+    /* Warstwa 3D z Twoim Złotem */
+    .output_canvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 2; transform: scaleX(-1); /* Odbicie lustrzane dla zgodności z wideo */
+      pointer-events: none;
+    }
+
+    /* Luksusowy UI */
+    .ui-layer {
+      position: absolute; bottom: 40px; left: 0; width: 100%;
+      display: flex; flex-direction: column; align-items: center; z-index: 10;
+    }
+    .logo {
+      font-size: 24px; font-weight: 800; color: #d4af37;
+      text-transform: uppercase; letter-spacing: 3px;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 8px;
+    }
+    .subtext { font-size: 11px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Ekran ładowania (znika, gdy pobierze modele i włączy kamerę) */
+    #loadingScreen {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: #0b0c10; z-index: 20; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; transition: opacity 0.5s ease;
+    }
     .spinner {
-      width: 48px; height: 48px; border: 3px solid rgba(212, 175, 55, 0.2);
-      border-top-color: var(--accent-gold); border-radius: 50%;
+      width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2);
+      border-top-color: #d4af37; border-radius: 50%;
       animation: spin 1s linear infinite; margin-bottom: 20px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    
-    #loadingText {
-      font-family: 'Syne', sans-serif; color: var(--accent-gold);
-      font-size: 14px; font-weight: 700; letter-spacing: 1px;
-      text-transform: uppercase; text-align: center;
-    }
-
-    .product-info {
-      background: var(--input-bg); border: 1px solid var(--card-border);
-      border-radius: 12px; padding: 14px; margin-bottom: 20px; text-align: center;
-    }
-    .product-title { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 2px; }
-    .product-sub { font-size: 11px; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px; }
-
-    .btn-submit {
-      width: 100%; background: var(--accent-gold); color: #000; border: none;
-      border-radius: 12px; padding: 18px; font-family: 'Syne', sans-serif;
-      font-size: 15px; font-weight: 800; cursor: pointer;
-      transition: background 0.2s; text-transform: uppercase; letter-spacing: 2px;
-    }
-    .btn-submit:hover { background: var(--accent-gold-hover); }
-    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .loading-text { color: #d4af37; font-size: 14px; letter-spacing: 2px; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div class="header">
-      <div class="logo">Grillz Studio</div>
-    </div>
+  <!-- Ekran ładowania -->
+  <div id="loadingScreen">
+    <div class="spinner"></div>
+    <div class="loading-text">ŁADOWANIE SILNIKA AR...</div>
+  </div>
 
-    <div class="preview-box" id="dropArea">
-      <input type="file" id="imageInput" accept="image/*">
-      <div class="upload-text" id="uploadPlaceholder">
-        <span>Wgraj zdjęcie</span>
-      </div>
-      
-      <img id="previewImage" alt="Podgląd">
-      <button type="button" class="btn-reset" id="resetBtn">↺ Zmień zdjęcie</button>
+  <!-- Kamera i Canvas 3D -->
+  <video class="input_video" autoplay playsinline muted></video>
+  <canvas class="output_canvas"></canvas>
 
-      <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-        <div id="loadingText">Modelowanie w wosku...</div>
-      </div>
-    </div>
-
-    <!-- Informacja o wybranym, dopracowywanym produkcie -->
-    <div class="product-info">
-      <div class="product-title">Solid Gold Full Set (Góra & Dół)</div>
-      <div class="product-sub">14K Żółte Złoto • Master Edition</div>
-    </div>
-
-    <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
+  <div class="ui-layer">
+    <div class="logo">Grillz Studio</div>
+    <div class="subtext">Live AR • Master Edition</div>
   </div>
 
   <script>
-    const imageInput = document.getElementById('imageInput');
-    const previewImage = document.getElementById('previewImage');
-    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-    const resetBtn = document.getElementById('resetBtn');
-    const generateBtn = document.getElementById('generateBtn');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const loadingText = document.getElementById('loadingText');
+    // ==========================================
+    // 1. LINKI DO TWOICH MODELI GITHUB (RAW)
+    // ==========================================
+    const URL_TOP = "TWOJ_LINK_DO_GORNEGO_GRILLZA.glb";
+    const URL_BOTTOM = "TWOJ_LINK_DO_DOLNEGO_GRILLZA.glb";
 
-    let loadedImageBase64 = null;
-    let generatedMaskBase64 = null;
-    let currentResWidth = 0;
-    let currentResHeight = 0;
+    // Opcja korekty skali - jak wrzucisz model i będzie za mały/duży, zmień ten mnożnik (np. na 2.0 lub 0.5)
+    const SCALE_MULTIPLIER = 1.0; 
+    // Przesunięcie zębów lekko do tyłu (głębia), żeby chowały się za wargami
+    const Z_DEPTH_OFFSET = -10; 
 
-    // Dokładnie Twoje luksusowe etapy ładowania
-    const loadingPhases = [
-      "Modelowanie w wosku...",
-      "Odlewanie formy...",
-      "Polerowanie na wysoki połysk...",
-      "Ostatnie szlify..."
-    ];
+    const videoElement = document.querySelector('.input_video');
+    const canvasElement = document.querySelector('.output_canvas');
+    const loadingScreen = document.getElementById('loadingScreen');
 
-    resetBtn.addEventListener('click', () => {
-      loadedImageBase64 = null;
-      generatedMaskBase64 = null;
-      currentResWidth = 0;
-      currentResHeight = 0;
-      imageInput.value = '';
-      previewImage.src = '';
-      previewImage.style.display = 'none';
-      uploadPlaceholder.style.display = 'block';
-      resetBtn.style.display = 'none';
-      imageInput.style.display = 'block';
-    });
+    // ==========================================
+    // 2. KONFIGURACJA SILNIKA 3D (THREE.JS)
+    // ==========================================
+    const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
+    // Ustawiamy silnik fizyki światła
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
 
-    imageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+    const scene = new THREE.Scene();
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 1536; // Wysoka rozdzielczość zachowująca detale anatomii zębów
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
+    // Kamera ortograficzna idealna do nakładania 2D/3D Face Trackingu
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
+    camera.position.z = 100;
 
-          currentResWidth = width;
-          currentResHeight = height;
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-
-          loadedImageBase64 = canvas.toDataURL('image/jpeg', 0.95);
-          previewImage.src = loadedImageBase64;
-          previewImage.style.display = 'block';
-          uploadPlaceholder.style.display = 'none';
-          imageInput.style.display = 'none';
-          resetBtn.style.display = 'block';
-
-          detectFaceLandmarks(img, width, height);
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
-    function detectFaceLandmarks(img, w, h) {
-      const faceMesh = new FaceMesh({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    // HDRI (Oświetlenie studyjne premium) - ładujemy z darmowego publicznego CDN do testów
+    new THREE.RGBELoader()
+      .setDataType(THREE.UnsignedByteType)
+      .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', (texture) => {
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+        const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+        scene.environment = envMap; // To nadaje złotu ultra realistyczne odbicia
+        texture.dispose();
+        pmremGenerator.dispose();
       });
 
-      faceMesh.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.5
-      });
+    // Światła pomocnicze
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffee, 1.5);
+    directionalLight.position.set(0, 10, 20);
+    scene.add(directionalLight);
 
-      faceMesh.onResults((results) => {
-        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-          const landmarks = results.multiFaceLandmarks[0];
-          generateFullMouthMask(landmarks, w, h);
-        }
-      });
+    let topGrillzModel = null;
+    let bottomGrillzModel = null;
 
-      faceMesh.send({ image: img });
-    }
+    // Ładowanie plików .GLB
+    const gltfLoader = new THREE.GLTFLoader();
+    
+    // Pobierz Górę
+    gltfLoader.load(URL_TOP, (gltf) => {
+      topGrillzModel = gltf.scene;
+      scene.add(topGrillzModel);
+      topGrillzModel.visible = false; // Ukryj do momentu wykrycia twarzy
+    }, undefined, (err) => console.error("Błąd ładowania góry:", err));
 
-    function generateFullMouthMask(landmarks, w, h) {
-      const maskCanvas = document.createElement('canvas');
-      maskCanvas.width = w;
-      maskCanvas.height = h;
-      const mCtx = maskCanvas.getContext('2d');
+    // Pobierz Dół
+    gltfLoader.load(URL_BOTTOM, (gltf) => {
+      bottomGrillzModel = gltf.scene;
+      scene.add(bottomGrillzModel);
+      bottomGrillzModel.visible = false;
+      
+      // Kiedy oba się załadują, ukryj ekran ładowania
+      setTimeout(() => { loadingScreen.style.opacity = '0'; setTimeout(() => loadingScreen.style.display = 'none', 500); }, 1000);
+    }, undefined, (err) => console.error("Błąd ładowania dołu:", err));
 
-      mCtx.fillStyle = '#000000';
-      mCtx.fillRect(0, 0, w, h);
 
-      const upperLip = landmarks[13];
-      const lowerLip = landmarks[14];
-      const leftCorner = landmarks[61];
-      const rightCorner = landmarks[291];
-
-      const lx = leftCorner.x * w;
-      const rx = rightCorner.x * w;
-      const width = rx - lx;
-
-      mCtx.fillStyle = '#FFFFFF';
-      mCtx.beginPath();
-
-      // Pełny łuk (góra i dół jednocześnie, dokładnie tak jak na referencji)
-      const boxX = lx - width * 0.05;
-      const boxW = width * 1.1;
-      const topY = (upperLip.y * h) - (width * 0.16);
-      const botY = (lowerLip.y * h) + (width * 0.16);
-
-      mCtx.roundRect(boxX, topY, boxW, (botY - topY), 12);
-      mCtx.fill();
-
-      generatedMaskBase64 = maskCanvas.toDataURL('image/png');
-    }
-
-    generateBtn.addEventListener('click', async () => {
-      if (!loadedImageBase64) { alert('Najpierw wgraj zdjęcie!'); return; }
-      if (!generatedMaskBase64) { alert('Trwa skanowanie anatomii zgryzu, spróbuj ponownie za chwilę.'); return; }
-
-      generateBtn.disabled = true;
-      loadingOverlay.classList.add('active');
-
-      let step = 0;
-      loadingText.textContent = loadingPhases[step];
-      const textInterval = setInterval(() => {
-        step++;
-        if (step < loadingPhases.length) {
-          loadingText.textContent = loadingPhases[step];
-        }
-      }, 2000);
-
-      try {
-        const response = await fetch('/.netlify/functions/generate-grillz', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: loadedImageBase64,
-            mask: generatedMaskBase64
-          })
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Błąd generowania');
-
-        const resultImg = new Image();
-        resultImg.onload = () => {
-          previewImage.src = resultImg.src;
-          clearInterval(textInterval);
-          loadingOverlay.classList.remove('active');
-          generateBtn.disabled = false;
-        };
-        resultImg.src = data.image;
-
-      } catch (err) {
-        clearInterval(textInterval);
-        loadingOverlay.classList.remove('active');
-        generateBtn.disabled = false;
-        alert('BŁĄD PRZYMIARKI:\n\n' + err.message);
+    // ==========================================
+    // 3. ANATOMICZNA MATEMATYKA (MEDIAPIPE)
+    // ==========================================
+    function onResults(results) {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      // Aktualizacja rozmiaru okna
+      if (width !== window.innerWidth) {
+        width = window.innerWidth; height = window.innerHeight;
+        camera.left = -width/2; camera.right = width/2;
+        camera.top = height/2; camera.bottom = -height/2;
+        camera.updateProjectionMatrix();
       }
+
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && topGrillzModel && bottomGrillzModel) {
+        const landmarks = results.multiFaceLandmarks[0];
+
+        // Kąciki ust (do skali i kątów)
+        const leftCorner = landmarks[61];
+        const rightCorner = landmarks[291];
+        
+        // Środki warg od wewnętrznej strony (zęby zaczynają się tuż pod/nad nimi)
+        const topLipInner = landmarks[13]; 
+        const bottomLipInner = landmarks[14];
+
+        // 1. OBLICZANIE SKALI
+        // Mierzymy szerokość ust w pikselach ekranu
+        const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
+        const currentScale = (mouthWidthPixels / 100) * SCALE_MULTIPLIER; // Podzielone przez 100 jako bazowa normalizacja
+
+        // 2. OBLICZANIE ROTACJI (Oś Z - przechylenie głowy w lewo/prawo)
+        const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
+        
+        // Obliczanie Rotacji (Oś Y - obrót w lewo/prawo) - aproksymacja z głębi kącików
+        const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2);
+
+        // Obliczanie Rotacji (Oś X - kiwanie góra/dół) - czoło vs broda
+        const topFace = landmarks[10]; const bottomFace = landmarks[152];
+        const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
+
+        // 3. POZYCJONOWANIE - GÓRA
+        topGrillzModel.visible = true;
+        topGrillzModel.scale.set(currentScale, currentScale, currentScale);
+        topGrillzModel.rotation.set(angleX, angleY, -angleZ); // Minus przy Z z powodu odwróconej kamery
+        
+        // Kotwiczymy do wewnętrznej górnej wargi (środek Origin Twojego modelu musi być na jedynkach!)
+        topGrillzModel.position.x = (topLipInner.x - 0.5) * width;
+        topGrillzModel.position.y = -(topLipInner.y - 0.5) * height; // Oś Y w WebGL jest odwrócona
+        topGrillzModel.position.z = (topLipInner.z * width) + Z_DEPTH_OFFSET;
+
+        // 4. POZYCJONOWANIE - DÓŁ
+        bottomGrillzModel.visible = true;
+        bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
+        bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
+
+        bottomGrillzModel.position.x = (bottomLipInner.x - 0.5) * width;
+        bottomGrillzModel.position.y = -(bottomLipInner.y - 0.5) * height;
+        bottomGrillzModel.position.z = (bottomLipInner.z * width) + Z_DEPTH_OFFSET;
+
+      } else {
+        if(topGrillzModel) topGrillzModel.visible = false;
+        if(bottomGrillzModel) bottomGrillzModel.visible = false;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // ==========================================
+    // 4. INICJALIZACJA KAMERY I MEDIAPIPE
+    // ==========================================
+    const faceMesh = new FaceMesh({locateFile: (file) => {
+      return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+    }});
+    
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true, // Wymagane dla precyzyjnych ust
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
     });
+    faceMesh.onResults(onResults);
+
+    const cameraHelper = new Camera(videoElement, {
+      onFrame: async () => {
+        await faceMesh.send({image: videoElement});
+      },
+      width: 1280,
+      height: 720
+    });
+    cameraHelper.start();
   </script>
 </body>
 </html>
