@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — ADJUSTED</title>
+  <title>GRILLZ STUDIO — PERFECT FIT</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -31,7 +31,7 @@
     }
     #mobileConsole {
       position: absolute; top: 10px; left: 10px; right: 10px;
-      max-height: 100px; overflow-y: auto; background: rgba(0, 0, 0, 0.85);
+      max-height: 90px; overflow-y: auto; background: rgba(0, 0, 0, 0.85);
       color: #00ffcc; padding: 6px; border-radius: 6px; font-family: monospace;
       font-size: 9px; z-index: 30; border: 1px solid #00ffcc; pointer-events: none;
     }
@@ -63,7 +63,7 @@
 
   <div id="loadingScreen">
     <div class="spinner"></div>
-    <div class="loading-text">ŁADOWANIE...</div>
+    <div class="loading-text">DOPASOWYWANIE SKALI...</div>
   </div>
 
   <div id="mobileConsole">Start...</div>
@@ -88,11 +88,11 @@
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"; 
 
     // ==========================================
-    // POPRAWIONE POZYCJE (GÓRA NIŻEJ)
+    // NOWA, WIĘKSZA SKALA I POPRAWIONE OFFSETY
     // ==========================================
-    const SCALE_MULTIPLIER = 2.5;     
-    const TOP_Y_OFFSET = -8;          // Przesunięte w dół, bliżej środka ust
-    const BOTTOM_Y_OFFSET = -15;      
+    const SCALE_MULTIPLIER = 4.8;     // Zwiększamy na 8 zębów (szerokość ust)
+    const TOP_Y_OFFSET = -22;         // Ściągamy górę znacznie niżej, na linię zębów
+    const BOTTOM_Y_OFFSET = -28;      // Ściągamy dół niżej na dolne zęby
     const Z_DEPTH_OFFSET = -2;        
 
     const videoElement = document.querySelector('.input_video');
@@ -133,7 +133,7 @@
     function checkLoaded() {
       loadedCount++;
       if (loadedCount >= 2) {
-        logOnScreen("Gotowe!");
+        logOnScreen("Gotowe - skala 4.8x!");
         loadingScreen.style.opacity = '0';
         setTimeout(() => loadingScreen.style.display = 'none', 500);
       }
