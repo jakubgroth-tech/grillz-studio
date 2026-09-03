@@ -73,7 +73,6 @@
       object-fit: contain; display: none; z-index: 10;
     }
 
-    /* Przycisk resetu widoczny po wygenerowaniu */
     .btn-reset {
       position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.7);
       color: var(--text-main); border: 1px solid var(--card-border); padding: 6px 12px;
@@ -223,14 +222,13 @@
     const loadingText = document.getElementById('loadingText');
 
     let loadedImageBase64 = null;
-    let rawImageElement = null;
-    let originalWidth = 0;
-    let originalHeight = 0;
     let cachedLandmarks = null;
+    let currentResWidth = 0;
+    let currentResHeight = 0;
 
     let selectedMaterial = "gold";
     let selectedStyle = "full";
-    let selectedPosition = "top"; // 'top', 'bottom', 'full'
+    let selectedPosition = "top";
 
     const loadingPhases = [
       "Modelowanie w wosku...",
@@ -260,18 +258,17 @@
         document.querySelectorAll('.pos-tile').forEach(t => t.classList.remove('active'));
         tile.classList.add('active');
         selectedPosition = tile.getAttribute('data-value');
-        // Jeśli mamy już załadowane zdjęcie, przelicz maskę dla nowej pozycji łuku
-        if (rawImageElement && cachedLandmarks) {
-          generateMaskForPosition(cachedLandmarks, originalWidth, originalHeight);
+        if (cachedLandmarks && currentResWidth > 0) {
+          generateMaskForPosition(cachedLandmarks, currentResWidth, currentResHeight);
         }
       });
     });
 
-    // Resetowanie widoku do stanu początkowego
     resetBtn.addEventListener('click', () => {
       loadedImageBase64 = null;
-      rawImageElement = null;
       cachedLandmarks = null;
+      currentResWidth = 0;
+      currentResHeight = 0;
       imageInput.value = '';
       previewImage.src = '';
       previewImage.style.display = 'none';
@@ -288,13 +285,10 @@
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          rawImageElement = img;
-          originalWidth = img.width;
-          originalHeight = img.height;
-
+          // Zwiększona rozdzielczość (1536px) dla maksymalnej detali zębów i granic dziąseł
           let width = img.width;
           let height = img.height;
-          const maxDim = 1024;
+          const maxDim = 1536;
           if (width > maxDim || height > maxDim) {
             if (width > height) {
               height = Math.round((height * maxDim) / width);
@@ -305,12 +299,15 @@
             }
           }
 
+          currentResWidth = width;
+          currentResHeight = height;
+
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
           canvas.getContext('2d').drawImage(img, 0, 0, width, height);
 
-          loadedImageBase64 = canvas.toDataURL('image/jpeg', 0.92);
+          loadedImageBase64 = canvas.toDataURL('image/jpeg', 0.95);
           previewImage.src = loadedImageBase64;
           previewImage.style.display = 'block';
           uploadPlaceholder.style.display = 'none';
@@ -372,20 +369,17 @@
       const splitY = ((upperLip.y + lowerLip.y) / 2) * h;
 
       if (selectedPosition === 'top') {
-        // Tylko górny łuk (od linii ust w górę, chroniąc dziąsła)
-        const topY = (upperLip.y * h) - (width * 0.18);
-        const botY = splitY - 2;
-        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 8);
+        const topY = (upperLip.y * h) - (width * 0.16);
+        const botY = splitY - 4; // Bezpieczny margines przed dziąsłami
+        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 6);
       } else if (selectedPosition === 'bottom') {
-        // Tylko dolny łuk
-        const topY = splitY + 2;
-        const botY = (lowerLip.y * h) + (width * 0.18);
-        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 8);
+        const topY = splitY + 4;
+        const botY = (lowerLip.y * h) + (width * 0.16);
+        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 6);
       } else {
-        // Full (oba łuki)
-        const topY = (upperLip.y * h) - (width * 0.15);
-        const botY = (lowerLip.y * h) + (width * 0.15);
-        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 12);
+        const topY = (upperLip.y * h) - (width * 0.14);
+        const botY = (lowerLip.y * h) + (width * 0.14);
+        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 10);
       }
       mCtx.fill();
 
