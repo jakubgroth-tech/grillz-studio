@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — Photo AI Studio</title>
+  <title>GRILLZ STUDIO — Master Edition</title>
   
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0b0c10">
 
-  <!-- Google MediaPipe do precyzyjnego wycinania łuków zębowych -->
+  <!-- Google MediaPipe do automatycznej maski pełnego łuku -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
@@ -50,17 +50,17 @@
     }
     .container > * { position: relative; z-index: 1; }
 
-    .header { text-align: center; margin-bottom: 20px; }
+    .header { text-align: center; margin-bottom: 24px; }
     .logo { 
       font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; 
       color: var(--accent-gold); letter-spacing: 2px; text-transform: uppercase; 
     }
     
     .preview-box {
-      width: 100%; height: 340px; background: var(--input-bg);
+      width: 100%; height: 380px; background: var(--input-bg);
       border: 2px dashed var(--card-border); border-radius: var(--radius);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; margin-bottom: 14px; cursor: pointer;
+      align-items: center; justify-content: center; margin-bottom: 20px; cursor: pointer;
     }
     .preview-box input[type="file"] {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 20;
@@ -83,51 +83,36 @@
 
     .loading-overlay {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(18, 20, 28, 0.95); display: flex; flex-direction: column;
+      background: rgba(18, 20, 28, 0.96); display: flex; flex-direction: column;
       align-items: center; justify-content: center; z-index: 30;
       opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
     }
     .loading-overlay.active { opacity: 1; pointer-events: all; }
     
     .spinner {
-      width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2);
+      width: 48px; height: 48px; border: 3px solid rgba(212, 175, 55, 0.2);
       border-top-color: var(--accent-gold); border-radius: 50%;
-      animation: spin 1s linear infinite; margin-bottom: 18px;
+      animation: spin 1s linear infinite; margin-bottom: 20px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     
     #loadingText {
       font-family: 'Syne', sans-serif; color: var(--accent-gold);
-      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+      font-size: 14px; font-weight: 700; letter-spacing: 1px;
       text-transform: uppercase; text-align: center;
     }
 
-    .form-group { margin-bottom: 14px; }
-    .label-title { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
-    
-    .tiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .tiles-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-    
-    .option-tile {
-      background: var(--input-bg); border: 2px solid var(--card-border);
-      border-radius: 12px; padding: 10px; display: flex; align-items: center; justify-content: center;
-      gap: 8px; cursor: pointer; transition: all 0.2s ease; text-align: left;
+    .product-info {
+      background: var(--input-bg); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 14px; margin-bottom: 20px; text-align: center;
     }
-    .option-tile.center-text { flex-direction: column; text-align: center; gap: 2px; padding: 8px; }
-    .option-tile:hover { border-color: rgba(212, 175, 55, 0.5); }
-    .option-tile.active { border-color: var(--accent-gold); background: rgba(212, 175, 55, 0.08); }
-    .option-tile.disabled { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
-    
-    .tile-color { width: 20px; height: 20px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); flex-shrink: 0; }
-    .tile-color.gold { background: linear-gradient(135deg, #f3ce5a 0%, #d4af37 50%, #aa820a 100%); }
-    .tile-color.silver { background: linear-gradient(135deg, #ffffff 0%, #cfd5db 50%, #8a94a0 100%); }
-    .tile-text { font-size: 12px; font-weight: 600; color: var(--text-main); }
-    .tile-sub { font-size: 9px; color: var(--text-muted); display: block; }
-    
+    .product-title { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 2px; }
+    .product-sub { font-size: 11px; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px; }
+
     .btn-submit {
       width: 100%; background: var(--accent-gold); color: #000; border: none;
-      border-radius: 10px; padding: 16px; font-family: 'Syne', sans-serif;
-      font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 6px;
+      border-radius: 12px; padding: 18px; font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 800; cursor: pointer;
       transition: background 0.2s; text-transform: uppercase; letter-spacing: 2px;
     }
     .btn-submit:hover { background: var(--accent-gold-hover); }
@@ -156,57 +141,10 @@
       </div>
     </div>
 
-    <div class="form-group">
-      <span class="label-title">Łuk</span>
-      <div class="tiles-grid-3">
-        <div class="option-tile center-text active pos-tile" data-value="top">
-          <span class="tile-text">Góra</span>
-        </div>
-        <div class="option-tile center-text pos-tile" data-value="bottom">
-          <span class="tile-text">Dół</span>
-        </div>
-        <div class="option-tile center-text pos-tile" data-value="full">
-          <span class="tile-text">Full</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <span class="label-title">Wybierz materiał</span>
-      <div class="tiles-grid">
-        <div class="option-tile active material-tile" data-value="gold">
-          <div class="tile-color gold"></div>
-          <div>
-            <span class="tile-text">Złoto</span>
-            <span class="tile-sub">14K Solid Gold</span>
-          </div>
-        </div>
-        <div class="option-tile material-tile" data-value="silver">
-          <div class="tile-color silver"></div>
-          <div>
-            <span class="tile-text">Srebro</span>
-            <span class="tile-sub">925 Sterling</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <span class="label-title">Wybierz styl</span>
-      <div class="tiles-grid-3">
-        <div class="option-tile center-text active style-tile" data-value="full">
-          <span class="tile-text">Pełne Zęby</span>
-          <span class="tile-sub">Solid Caps</span>
-        </div>
-        <div class="option-tile center-text style-tile" data-value="open">
-          <span class="tile-text">Ramki</span>
-          <span class="tile-sub">Open Face</span>
-        </div>
-        <div class="option-tile center-text disabled" title="Funkcja dostępna wkrótce">
-          <span class="tile-text">Custom</span>
-          <span class="tile-sub" style="color: var(--accent-gold);">Wkrótce</span>
-        </div>
-      </div>
+    <!-- Informacja o wybranym, dopracowywanym produkcie -->
+    <div class="product-info">
+      <div class="product-title">Solid Gold Full Set (Góra & Dół)</div>
+      <div class="product-sub">14K Żółte Złoto • Master Edition</div>
     </div>
 
     <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
@@ -222,14 +160,11 @@
     const loadingText = document.getElementById('loadingText');
 
     let loadedImageBase64 = null;
-    let cachedLandmarks = null;
+    let generatedMaskBase64 = null;
     let currentResWidth = 0;
     let currentResHeight = 0;
 
-    let selectedMaterial = "gold";
-    let selectedStyle = "full";
-    let selectedPosition = "top";
-
+    // Dokładnie Twoje luksusowe etapy ładowania
     const loadingPhases = [
       "Modelowanie w wosku...",
       "Odlewanie formy...",
@@ -237,36 +172,9 @@
       "Ostatnie szlify..."
     ];
 
-    document.querySelectorAll('.material-tile').forEach(tile => {
-      tile.addEventListener('click', () => {
-        document.querySelectorAll('.material-tile').forEach(t => t.classList.remove('active'));
-        tile.classList.add('active');
-        selectedMaterial = tile.getAttribute('data-value');
-      });
-    });
-
-    document.querySelectorAll('.style-tile').forEach(tile => {
-      tile.addEventListener('click', () => {
-        document.querySelectorAll('.style-tile').forEach(t => t.classList.remove('active'));
-        tile.classList.add('active');
-        selectedStyle = tile.getAttribute('data-value');
-      });
-    });
-
-    document.querySelectorAll('.pos-tile').forEach(tile => {
-      tile.addEventListener('click', () => {
-        document.querySelectorAll('.pos-tile').forEach(t => t.classList.remove('active'));
-        tile.classList.add('active');
-        selectedPosition = tile.getAttribute('data-value');
-        if (cachedLandmarks && currentResWidth > 0) {
-          generateMaskForPosition(cachedLandmarks, currentResWidth, currentResHeight);
-        }
-      });
-    });
-
     resetBtn.addEventListener('click', () => {
       loadedImageBase64 = null;
-      cachedLandmarks = null;
+      generatedMaskBase64 = null;
       currentResWidth = 0;
       currentResHeight = 0;
       imageInput.value = '';
@@ -285,10 +193,9 @@
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          // Zwiększona rozdzielczość (1536px) dla maksymalnej detali zębów i granic dziąseł
           let width = img.width;
           let height = img.height;
-          const maxDim = 1536;
+          const maxDim = 1536; // Wysoka rozdzielczość zachowująca detale anatomii zębów
           if (width > maxDim || height > maxDim) {
             if (width > height) {
               height = Math.round((height * maxDim) / width);
@@ -334,16 +241,15 @@
 
       faceMesh.onResults((results) => {
         if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-          cachedLandmarks = results.multiFaceLandmarks[0];
-          generateMaskForPosition(cachedLandmarks, w, h);
+          const landmarks = results.multiFaceLandmarks[0];
+          generateFullMouthMask(landmarks, w, h);
         }
       });
 
       faceMesh.send({ image: img });
     }
 
-    let generatedMaskBase64 = null;
-    function generateMaskForPosition(landmarks, w, h) {
+    function generateFullMouthMask(landmarks, w, h) {
       const maskCanvas = document.createElement('canvas');
       maskCanvas.width = w;
       maskCanvas.height = h;
@@ -364,23 +270,13 @@
       mCtx.fillStyle = '#FFFFFF';
       mCtx.beginPath();
 
+      // Pełny łuk (góra i dół jednocześnie, dokładnie tak jak na referencji)
       const boxX = lx - width * 0.05;
       const boxW = width * 1.1;
-      const splitY = ((upperLip.y + lowerLip.y) / 2) * h;
+      const topY = (upperLip.y * h) - (width * 0.16);
+      const botY = (lowerLip.y * h) + (width * 0.16);
 
-      if (selectedPosition === 'top') {
-        const topY = (upperLip.y * h) - (width * 0.16);
-        const botY = splitY - 4; // Bezpieczny margines przed dziąsłami
-        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 6);
-      } else if (selectedPosition === 'bottom') {
-        const topY = splitY + 4;
-        const botY = (lowerLip.y * h) + (width * 0.16);
-        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 6);
-      } else {
-        const topY = (upperLip.y * h) - (width * 0.14);
-        const botY = (lowerLip.y * h) + (width * 0.14);
-        mCtx.roundRect(boxX, topY, boxW, (botY - topY), 10);
-      }
+      mCtx.roundRect(boxX, topY, boxW, (botY - topY), 12);
       mCtx.fill();
 
       generatedMaskBase64 = maskCanvas.toDataURL('image/png');
@@ -388,7 +284,7 @@
 
     generateBtn.addEventListener('click', async () => {
       if (!loadedImageBase64) { alert('Najpierw wgraj zdjęcie!'); return; }
-      if (!generatedMaskBase64) { alert('Trwa wykrywanie łuku zębów, spróbuj ponownie za chwilę.'); return; }
+      if (!generatedMaskBase64) { alert('Trwa skanowanie anatomii zgryzu, spróbuj ponownie za chwilę.'); return; }
 
       generateBtn.disabled = true;
       loadingOverlay.classList.add('active');
@@ -400,7 +296,7 @@
         if (step < loadingPhases.length) {
           loadingText.textContent = loadingPhases[step];
         }
-      }, 1800);
+      }, 2000);
 
       try {
         const response = await fetch('/.netlify/functions/generate-grillz', {
@@ -408,10 +304,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image: loadedImageBase64,
-            mask: generatedMaskBase64,
-            material: selectedMaterial,
-            style: selectedStyle,
-            position: selectedPosition
+            mask: generatedMaskBase64
           })
         });
 
