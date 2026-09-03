@@ -20,15 +20,15 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Brak klucza FAL_KEY w Netlify.' }) };
     }
 
-    // Zaawansowane instrukcje dla stylu "Ramki" (Open Face) vs "Pełne"
+    // Precyzyjne zdefiniowanie stylu jubilerskiego dla AI (Full Caps vs Open-Face Window Grillz)
     let stylePrompt = "";
     if (style === 'open') {
-      stylePrompt = `Open-face window grillz style: luxurious custom-fitted ${material} metallic borders and frames outlining exclusively the perimeter, edges, and gaps of the teeth, leaving the front center of each tooth completely hollow, uncovered, and exposing the natural white enamel inside. The jewelry acts precisely as a shiny metallic outer frame.`;
+      stylePrompt = `Open-face window grillz style: luxurious custom-fitted ${material} metallic frames, borders, and outlines wrapping tightly around the perimeter and edges of each tooth, leaving the center of each tooth hollow, uncovered, and exposing the natural white enamel inside. The jewelry is a shiny, precision-crafted metal skeleton outlining individual teeth.`;
     } else {
-      stylePrompt = `Solid full-cap grillz style: completely and seamlessly covering the teeth with solid ${material} custom dental molds and caps.`;
+      stylePrompt = `Solid full-cap grillz style: solid ${material} custom dental caps seamlessly covering every tooth completely with mirror polish.`;
     }
 
-    const promptText = `Ultra-detailed macro jewelry photography of custom hip-hop dental grillz. ${stylePrompt} Meticulously snapped and fitted strictly over the teeth inside the masked area. Highly polished mirror metallic reflections, sharp realistic contours separating individual teeth caps, professional studio lighting reflecting off the metal. Keep lips, skin, facial features, and background 100% untouched and identical to the original image.`;
+    const promptText = `Masterpiece macro jewelry photography of custom-fitted hip-hop dental grillz. ${stylePrompt} Meticulously snapped and fitted strictly over the teeth inside the masked area. The metal must rigorously follow the 3D anatomical contours, ridges, and individual separation lines of each tooth. Highly polished mirror reflections, specular highlights, and ambient shadows that perfectly match the exact lighting direction, color temperature, and brightness of the original user's face. Keep lips, skin, gums, facial features, and background 100% untouched and identical.`;
 
     const response = await fetch('https://fal.run/fal-ai/fast-sdxl/inpainting', {
       method: 'POST',
