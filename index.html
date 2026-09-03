@@ -197,7 +197,7 @@
 
     <button type="button" class="btn-submit" id="generateBtn">Przymiarka</button>
 
-    <div id="statusText">AI renderuje biżuterię w wysokiej rozdzielczości...</div>
+    <div id="statusText">Ostatnie szlify...</div>
   </div>
 
   <script>
@@ -453,7 +453,7 @@
       hiddenMaskCtx.moveTo(hiddenX, hiddenY);
     }
 
-    // ARCHITEKTURA CROP & SEAMLESS STITCHING (Płynne wtapianie bez kwadratów)
+    // Bezpośrednie i stabilne generowanie pełnoobrazowe
     document.getElementById('generateBtn').addEventListener('click', async () => {
       if (!loadedImage) { alert('Wgraj zdjęcie!'); return; }
 
@@ -464,59 +464,8 @@
       statusText.style.display = 'block';
 
       try {
-        const maskData = hiddenMaskCtx.getImageData(0, 0, hiddenMaskCanvas.width, hiddenMaskCanvas.height).data;
-        let minX = hiddenMaskCanvas.width, minY = hiddenMaskCanvas.height, maxX = 0, maxY = 0;
-        let hasPixels = false;
-
-        for (let y = 0; y < hiddenMaskCanvas.height; y++) {
-          for (let x = 0; x < hiddenMaskCanvas.width; x++) {
-            const idx = (y * hiddenMaskCanvas.width + x) * 4;
-            if (maskData[idx] > 128) {
-              hasPixels = true;
-              if (x < minX) minX = x;
-              if (x > maxX) maxX = x;
-              if (y < minY) minY = y;
-              if (y > maxY) maxY = y;
-            }
-          }
-        }
-
-        if (!hasPixels) {
-          alert('Zaznacz zęby na zdjęciu przed uruchomieniem przymiarki!');
-          generateBtn.disabled = false;
-          statusText.style.display = 'none';
-          return;
-        }
-
-        const padding = 70;
-        minX = Math.max(0, minX - padding);
-        minY = Math.max(0, minY - padding);
-        maxX = Math.min(hiddenMaskCanvas.width, maxX + padding);
-        maxY = Math.min(hiddenMaskCanvas.height, maxY + padding);
-
-        const cropW = maxX - minX;
-        const cropH = maxY - minY;
-
-        // Upscaling 2.5x dla detali AI
-        const upscaleFactor = 2.5;
-        const targetW = Math.round(cropW * upscaleFactor);
-        const targetH = Math.round(cropH * upscaleFactor);
-
-        const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = targetW;
-        cropCanvas.height = targetH;
-        cropCanvas.getContext('2d').drawImage(hiddenImageCanvas, minX, minY, cropW, cropH, 0, 0, targetW, targetH);
-
-        const cropMaskCanvas = document.createElement('canvas');
-        cropMaskCanvas.width = targetW;
-        cropMaskCanvas.height = targetH;
-        const cropMaskCtx = cropMaskCanvas.getContext('2d');
-        cropMaskCtx.fillStyle = '#000000';
-        cropMaskCtx.fillRect(0, 0, targetW, targetH);
-        cropMaskCtx.drawImage(hiddenMaskCanvas, minX, minY, cropW, cropH, 0, 0, targetW, targetH);
-
-        const imageB64 = cropCanvas.toDataURL('image/jpeg', 0.95);
-        const maskB64 = cropMaskCanvas.toDataURL('image/png');
+        const imageB64 = hiddenImageCanvas.toDataURL('image/jpeg', 0.95);
+        const maskB64 = hiddenMaskCanvas.toDataURL('image/png');
 
         const response = await fetch('/.netlify/functions/generate-grillz', {
           method: 'POST',
@@ -539,27 +488,13 @@
 
         if (!response.ok) throw new Error(data.error || 'Błąd generowania');
 
-        // Płynne wpasowanie za pomocą szablonu maski (Destination-in) – likwiduje widoczny kwadrat!
         const resultImg = new Image();
         resultImg.crossOrigin = "anonymous";
         resultImg.onload = () => {
-          const patchCanvas = document.createElement('canvas');
-          patchCanvas.width = cropW;
-          patchCanvas.height = cropH;
-          const pCtx = patchCanvas.getContext('2d');
-          
-          pCtx.drawImage(resultImg, 0, 0, targetW, targetH, 0, 0, cropW, cropH);
-          
-          // Używamy maski pędzla jako idealnego stensila wygładzającego krawędzie
-          pCtx.globalCompositeOperation = 'destination-in';
-          pCtx.drawImage(hiddenMaskCanvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
-          
-          hiddenImgCtx.drawImage(patchCanvas, minX, minY);
-
           const finalCanvas = document.createElement('canvas');
           finalCanvas.width = originalNaturalWidth;
           finalCanvas.height = originalNaturalHeight;
-          finalCanvas.getContext('2d').drawImage(hiddenImageCanvas, 0, 0, originalNaturalWidth, originalNaturalHeight);
+          finalCanvas.getContext('2d').drawImage(resultImg, 0, 0, originalNaturalWidth, originalNaturalHeight);
           
           loadedImage = new Image();
           loadedImage.onload = () => { setupViewer(); clearMasks(); };
