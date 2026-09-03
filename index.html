@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GRILLZ STUDIO — LIVE</title>
+  <title>GRILLZ STUDIO — AUTO-FIT</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
+  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
+  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
@@ -61,7 +63,7 @@
 
   <div id="loadingScreen">
     <div class="spinner"></div>
-    <div class="loading-text">URUCHAMIANIE...</div>
+    <div class="loading-text">ŁADOWANIE MODELI 10MB...</div>
   </div>
 
   <div id="mobileConsole">Start...</div>
@@ -82,14 +84,8 @@
       consoleDiv.scrollTop = consoleDiv.scrollHeight;
     }
 
-    // Używamy bezpiecznej domeny raw.githubusercontent.com bezpośrednio dla dużych plików 10MB+
     const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb";
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"; 
-
-    const SCALE_MULTIPLIER = 1.0; 
-    const Z_DEPTH_OFFSET = -5; 
-    const TOP_Y_OFFSET = 10;
-    const BOTTOM_Y_OFFSET = -10;
 
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
@@ -100,7 +96,7 @@
         loadingScreen.style.opacity = '0';
         setTimeout(() => loadingScreen.style.display = 'none', 500);
       }
-    }, 3500);
+    }, 4000);
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
@@ -114,15 +110,12 @@
     const camera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 0.1, 1000);
     camera.position.z = 100;
 
-    // POTĘŻNE OŚWIETLENIE STUDYJNE (Bez zewnętrznego HDRI, żeby nie było błędów sieciowych)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Jasne światło ogólne
-    scene.add(ambientLight);
-
-    const frontLight = new THREE.DirectionalLight(0xffffee, 3.0); // Światło główne z przodu na twarz
+    // Światła studyjne
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const frontLight = new THREE.DirectionalLight(0xffffee, 3.0);
     frontLight.position.set(0, 0, 50);
     scene.add(frontLight);
-
-    const topLight = new THREE.DirectionalLight(0xffffff, 2.0); // Światło z góry dla błysku na złocie
+    const topLight = new THREE.DirectionalLight(0xffffff, 2.0);
     topLight.position.set(0, 50, 20);
     scene.add(topLight);
 
@@ -133,7 +126,7 @@
     function checkLoaded() {
       loadedCount++;
       if (loadedCount >= 2) {
-        logOnScreen("Wszystkie modele gotowe w scenie!");
+        logOnScreen("Wszystkie modele przetworzone!");
         loadingScreen.style.opacity = '0';
         setTimeout(() => loadingScreen.style.display = 'none', 500);
       }
@@ -141,41 +134,49 @@
 
     const gltfLoader = new THREE.GLTFLoader();
     
-    logOnScreen("Pobieranie góry (10MB)...");
-    gltfLoader.load(URL_TOP, (gltf) => {
-      topGrillzModel = gltf.scene;
-      topGrillzModel.traverse((child) => {
+    // Funkcja optymalizująca i naprawiająca materiał/skalę wczytanego modelu 10MB
+    function setupModel(gltf, name) {
+      const model = gltf.scene;
+      
+      // Automatyczne obliczenie skali i rozmiaru w oparciu o Bounding Box modelu
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      logOnScreen(`${name} rozmiar: X:${size.x.toFixed(1)} Y:${size.y.toFixed(1)}`);
+
+      model.traverse((child) => {
         if (child.isMesh) {
           child.visible = true;
-          // Wymuszamy złoty, metaliczny wygląd w razie braku materiałów w pliku
-          child.material.metalness = 0.9;
-          child.material.roughness = 0.15;
-          child.material.color.setHex(0xffd700);
+          // Zapewniamy, że materiał wygląda jak złoto, jeśli plik zapisał surowe kolory
+          if (child.material) {
+            child.material.metalness = 0.9;
+            child.material.roughness = 0.15;
+            child.material.color.setHex(0xffd700);
+          }
         }
       });
+
+      return model;
+    }
+
+    logOnScreen("Pobieranie góry 10MB...");
+    gltfLoader.load(URL_TOP, (gltf) => {
+      topGrillzModel = setupModel(gltf, "Góra");
       scene.add(topGrillzModel);
       topGrillzModel.visible = false;
-      logOnScreen("Góra załadowana pomyślnie!");
+      logOnScreen("Góra gotowa!");
       checkLoaded();
     }, undefined, (err) => {
       logOnScreen("BŁĄD GÓRY: " + err.message, true);
       checkLoaded();
     });
 
-    logOnScreen("Pobieranie dołu...");
+    logOnScreen("Pobieranie dołu 10MB...");
     gltfLoader.load(URL_BOTTOM, (gltf) => {
-      bottomGrillzModel = gltf.scene;
-      bottomGrillzModel.traverse((child) => {
-        if (child.isMesh) {
-          child.visible = true;
-          child.material.metalness = 0.9;
-          child.material.roughness = 0.15;
-          child.material.color.setHex(0xffd700);
-        }
-      });
+      bottomGrillzModel = setupModel(gltf, "Dół");
       scene.add(bottomGrillzModel);
       bottomGrillzModel.visible = false;
-      logOnScreen("Dół załadowany pomyślnie!");
+      logOnScreen("Dół gotowy!");
       checkLoaded();
     }, undefined, (err) => {
       logOnScreen("BŁĄD DOŁU: " + err.message, true);
@@ -200,8 +201,12 @@
         const mouthCenterTop = landmarks[13]; 
         const mouthCenterBottom = landmarks[14];
 
+        // Bazowa szerokość ust w pikselach
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
-        const currentScale = (mouthWidthPixels / 110) * SCALE_MULTIPLIER;
+        
+        // Dynamiczna skala dostosowana do 10-megabajtowych modeli z Blendera
+        // Jeśli model w Blenderze był modelowany w metrach, ta skala go dopasuje do pikseli ekranu
+        const autoScale = mouthWidthPixels * 0.8; 
 
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2);
@@ -210,20 +215,20 @@
 
         if (topGrillzModel) {
           topGrillzModel.visible = true;
-          topGrillzModel.scale.set(currentScale, currentScale, currentScale);
+          topGrillzModel.scale.set(autoScale, autoScale, autoScale);
           topGrillzModel.rotation.set(angleX, angleY, -angleZ);
           topGrillzModel.position.x = (mouthCenterTop.x - 0.5) * width;
-          topGrillzModel.position.y = -(mouthCenterTop.y - 0.5) * height + TOP_Y_OFFSET;
-          topGrillzModel.position.z = (mouthCenterTop.z * width) + Z_DEPTH_OFFSET;
+          topGrillzModel.position.y = -(mouthCenterTop.y - 0.5) * height;
+          topGrillzModel.position.z = (mouthCenterTop.z * width);
         }
 
         if (bottomGrillzModel) {
           bottomGrillzModel.visible = true;
-          bottomGrillzModel.scale.set(currentScale, currentScale, currentScale);
+          bottomGrillzModel.scale.set(autoScale, autoScale, autoScale);
           bottomGrillzModel.rotation.set(angleX, angleY, -angleZ);
           bottomGrillzModel.position.x = (mouthCenterBottom.x - 0.5) * width;
-          bottomGrillzModel.position.y = -(mouthCenterBottom.y - 0.5) * height + BOTTOM_Y_OFFSET;
-          bottomGrillzModel.position.z = (mouthCenterBottom.z * width) + Z_DEPTH_OFFSET;
+          bottomGrillzModel.position.y = -(mouthCenterBottom.y - 0.5) * height;
+          bottomGrillzModel.position.z = (mouthCenterBottom.z * width);
         }
 
       } else {
