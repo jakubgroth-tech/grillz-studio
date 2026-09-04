@@ -22,11 +22,11 @@
     .input_video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transform: scaleX(-1); }
     .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; transform: scaleX(-1); pointer-events: none; }
     
-    /* ZMODERNIZOWANE UI */
+    /* UI WYŻEJ, ABY OMINĄĆ BANER NETLIFY I PASEK SAFARI */
     .ui-layer { 
-      position: absolute; bottom: 30px; left: 0; width: 100%; 
+      position: absolute; bottom: 80px; left: 0; width: 100%; 
       display: flex; flex-direction: column; align-items: center; z-index: 10; 
-      pointer-events: auto; /* Pozwala klikać przyciski */
+      pointer-events: auto; 
     }
     .logo { 
       font-size: 22px; font-weight: 800; color: #d4af37; 
@@ -35,7 +35,6 @@
     }
     .subtext { font-size: 10px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; opacity: 0.8;}
     
-    /* PANEL PRZEŁĄCZNIKÓW */
     .toggle-panel {
       display: flex; gap: 8px; background: rgba(11, 12, 16, 0.4);
       padding: 6px; border-radius: 30px; border: 1px solid rgba(212, 175, 55, 0.3);
@@ -71,7 +70,6 @@
     <div class="logo">Grillz Studio</div>
     <div class="subtext">Live AR • Master Edition</div>
     
-    <!-- NOWE PRZYCISKI DO WYBORU -->
     <div class="toggle-panel">
       <button class="toggle-btn" onclick="setMode('TOP')">Góra</button>
       <button class="toggle-btn active" onclick="setMode('FULL')">Komplet</button>
@@ -83,11 +81,10 @@
     // ==========================================
     // 0. LOGIKA INTERFEJSU
     // ==========================================
-    let currentMode = 'FULL'; // Domyślny tryb
+    let currentMode = 'FULL'; 
 
     function setMode(mode) {
       currentMode = mode;
-      // Aktualizacja stylów przycisków
       const btns = document.querySelectorAll('.toggle-btn');
       btns.forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
@@ -100,13 +97,18 @@
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb";
 
     // ==========================================
-    // 2. KONFIGURACJA 
+    // 2. KONFIGURACJA ZAAWANSOWANA (Ręczne dopasowanie)
     // ==========================================
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
 
-    // Delikatne obniżenie dołu w dół ekranu (w pikselach)
+    // OBNIŻENIE DOŁU (w pikselach). Jeśli nadal jest lekko za wysoko, zmień na np. 15.0
     const MOVE_BOTTOM_DOWN = 10.0; 
+
+    // KĄT POCHYLENIA DOŁU (W Radianach). 
+    // - Minus (np. -0.15) odchyla zęby DO TYŁU (w stronę gardła). 
+    // - Plus (np. 0.15) przechyla zęby DO PRZODU (wypycha do kamery).
+    const ROTATION_OFFSET_BOTTOM_X = -0.15; 
 
     const Z_DEPTH = -50; 
 
@@ -157,7 +159,7 @@
     scene.add(occluderMesh);
 
     // ==========================================
-    // 5. AUTO-NORMALIZACJA (Wersja stabilna)
+    // 5. AUTO-NORMALIZACJA
     // ==========================================
     function setupModelPro(modelScene, isTop) {
       const wrapper = new THREE.Group();
@@ -204,7 +206,7 @@
     });
 
     // ==========================================
-    // 6. ANATOMICZNE ŚLEDZENIE Z UWZGLĘDNIENIEM TRYBÓW
+    // 6. ANATOMICZNE ŚLEDZENIE
     // ==========================================
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
@@ -219,7 +221,6 @@
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && topWrapper && bottomWrapper) {
         const landmarks = results.multiFaceLandmarks[0];
 
-        // Maska Otworu Ust
         const maskShape = new THREE.Shape();
         maskShape.moveTo(-width, -height);
         maskShape.lineTo(width, -height);
@@ -240,7 +241,6 @@
         if(occluderMesh.geometry) occluderMesh.geometry.dispose();
         occluderMesh.geometry = newGeo;
 
-        // Skala i kąty
         const leftCorner = landmarks[61];
         const rightCorner = landmarks[291];
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
@@ -250,7 +250,7 @@
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // ZĘBY GÓRNE - Wyświetlane tylko w trybie 'TOP' lub 'FULL'
+        // ZĘBY GÓRNE
         topWrapper.visible = (currentMode === 'FULL' || currentMode === 'TOP');
         if (topWrapper.visible) {
             const topLipInner = landmarks[13]; 
@@ -259,12 +259,15 @@
             topWrapper.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
         }
 
-        // ZĘBY DOLNE - Wyświetlane tylko w trybie 'BOTTOM' lub 'FULL'
+        // ZĘBY DOLNE (Teraz z nową rotacją - odchyleniem do tyłu!)
         bottomWrapper.visible = (currentMode === 'FULL' || currentMode === 'BOTTOM');
         if (bottomWrapper.visible) {
             const bottomLipInner = landmarks[14];
             bottomWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
-            bottomWrapper.rotation.set(angleX, angleY, -angleZ);
+            
+            // TUTAJ dodany jest ROTATION_OFFSET_BOTTOM_X do głównej osi X (pochylenie)
+            bottomWrapper.rotation.set(angleX + ROTATION_OFFSET_BOTTOM_X, angleY, -angleZ);
+            
             bottomWrapper.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN, Z_DEPTH);
         }
 
