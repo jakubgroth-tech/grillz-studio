@@ -8,11 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
-  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -58,8 +56,8 @@
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
 
-    // Wyzerowałem to. Nowy algorytm punktu zaczepienia powinien załatwić sprawę.
-    // Jeśli nadal będą minimalnie za wysoko, użyj np. 10.0 lub 20.0
+    // Delikatne obniżenie dołu. Zaczynamy od zera, bo nowy Pivot powinien ułożyć go naturalnie. 
+    // Zwiększ np. na 10.0, jeśli ma być niżej, lub użyj wartości ujemnej (np. -10.0), żeby dać go wyżej.
     const MOVE_BOTTOM_DOWN = 0.0; 
 
     const Z_DEPTH = -50; 
@@ -111,7 +109,7 @@
     scene.add(occluderMesh);
 
     // ==========================================
-    // 5. AUTO-NORMALIZACJA MODELI (NAPRAWIONA!)
+    // 5. AUTO-NORMALIZACJA MODELI (Z POPRAWIONYM PIVOTEM!)
     // ==========================================
     function setupModelPro(modelScene, isTop) {
       const wrapper = new THREE.Group();
@@ -123,8 +121,8 @@
       const scale = 1.0 / size.x;
       modelScene.scale.set(scale, scale, scale);
 
-      // ZMIANA TUTAJ: Oba modele kotwiczymy do najwyższego punktu (box.max.y).
-      // Góra jest podwieszona za dziąsła, dół podwieszony za czubki zębów.
+      // KLUCZOWA POPRAWKA: Oba modele podwieszamy za górną krawędź (box.max.y).
+      // Zapobiega to windowaniu dolnego modelu nad zęby.
       const pivotY = box.max.y; 
 
       modelScene.position.x = -center.x * scale;
@@ -213,7 +211,7 @@
         topWrapper.rotation.set(angleX, angleY, -angleZ); 
         topWrapper.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
 
-        // ZĘBY DOLNE (Teraz z prawidłowym Pivotem!)
+        // ZĘBY DOLNE (Teraz poprawnie podpięty suwak przesunięcia i nowy Pivot)
         const bottomLipInner = landmarks[14];
         bottomWrapper.visible = true;
         bottomWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
