@@ -30,7 +30,7 @@
       z-index: 3; pointer-events: none;
     }
     
-    /* NOWE PŁYNNE INTRO Z POTĘŻNĄ POŚWIATĄ */
+    /* POPRAWIONE INTRO - CIĄGŁY RUCH I BIAŁA POŚWIATA */
     #introSplash {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: #0b0c10; z-index: 60; display: flex; justify-content: center; align-items: center;
@@ -38,28 +38,29 @@
     }
     .splash-logo {
       width: min(75vw, 320px); height: min(75vw, 320px); object-fit: contain;
-      animation: fluidSplash 3.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      /* Używamy ease-in-out dla płynnego ruchu bez ostrego zatrzymania na końcu */
+      animation: fluidSplash 3.2s ease-in-out forwards;
     }
     @keyframes fluidSplash {
       0% { 
         opacity: 0; 
         transform: scale(0.5); 
-        filter: drop-shadow(0 0 0px rgba(212,175,55,0)); 
+        filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0)); 
       }
       20% { 
         opacity: 1; 
         transform: scale(0.85); 
-        filter: drop-shadow(0 0 50px rgba(212,175,55,0.6)); 
+        filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.6)); 
       }
       80% { 
         opacity: 1; 
         transform: scale(1.15); 
-        filter: drop-shadow(0 0 120px rgba(212,175,55,1)); /* Szczytowa faza jasnej poświaty */
+        filter: drop-shadow(0 0 150px rgba(255, 255, 255, 1)); /* Potężne, jasne, białe podświetlenie */
       }
       100% { 
         opacity: 0; 
-        transform: scale(1.3); /* Cały czas w ruchu powiększającym aż do końca */
-        filter: drop-shadow(0 0 20px rgba(212,175,55,0)); 
+        transform: scale(1.35); /* Logo bez przerwy powiększa się aż zniknie */
+        filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0)); 
       }
     }
 
@@ -156,7 +157,7 @@
 </head>
 <body>
 
-  <!-- PŁYNNE INTRO Z EFEKTEM NIESKOŃCZONEGO RUCHU -->
+  <!-- PŁYNNE INTRO Z EFEKTEM NIESKOŃCZONEGO RUCHU I BIAŁĄ POŚWIATĄ -->
   <div id="introSplash">
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon.png" alt="Grillz Studio Icon" class="splash-logo">
   </div>
@@ -179,6 +180,7 @@
     <button class="btn-browse" onclick="toggleGallery(true)">PRZYMIARKA</button>
   </div>
 
+  <!-- CZYSTA GALERIA - 3 ZŁOTE + 3 SREBRNE -->
   <div id="galleryModal">
     <div class="gallery-header">
       <div class="gallery-title">Wybierz Model</div>
@@ -218,19 +220,52 @@
           <div class="product-desc">Tylko Dół</div>
         </div>
       </div>
+
+      <!-- 4. Silver Full Set -->
+      <div class="product-card" onclick="selectProduct('silver_full', this)">
+        <div class="product-thumb">
+          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-full-silver.png" alt="Silver Full">
+        </div>
+        <div class="product-info">
+          <div class="product-name">Silver Full Set</div>
+          <div class="product-desc">Srebro • Komplet (Góra + Dół)</div>
+        </div>
+      </div>
+      
+      <!-- 5. Silver Top -->
+      <div class="product-card" onclick="selectProduct('silver_top', this)">
+        <div class="product-thumb">
+          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-top-silver.png" alt="Silver Top">
+        </div>
+        <div class="product-info">
+          <div class="product-name">Silver Top</div>
+          <div class="product-desc">Srebro • Tylko Góra</div>
+        </div>
+      </div>
+
+      <!-- 6. Silver Bottom -->
+      <div class="product-card" onclick="selectProduct('silver_bottom', this)">
+        <div class="product-thumb">
+          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-bottom-silver.png" alt="Silver Bottom">
+        </div>
+        <div class="product-info">
+          <div class="product-name">Silver Bottom</div>
+          <div class="product-desc">Srebro • Tylko Dół</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    // Logika zniknięcia czarnego tła idealnie podłączona pod moment zanikania animacji loga
+    // Logika zniknięcia czarnego tła (idealnie zgrane z animacją loga, aby nie było "zacięcia")
     window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('introSplash');
-        splash.style.opacity = '0'; // Zaczyna znikać tło
+        splash.style.opacity = '0'; 
         setTimeout(() => {
           splash.style.display = 'none';
-        }, 800); // 800ms na transition ease-in-out z CSS
-      }, 2500); // Tło zaczyna zanikać pod koniec animacji fluidSplash
+        }, 800); 
+      }, 2500); 
     });
 
     let activeTopModel = null;    
@@ -256,14 +291,24 @@
         activeTopModel = 'goldTop';
       } else if (productId === 'gold_bottom') {
         activeBottomModel = 'goldBottom';
+      } else if (productId === 'silver_full') {
+        activeTopModel = 'silverTop';
+        activeBottomModel = 'silverBottom';
+      } else if (productId === 'silver_top') {
+        activeTopModel = 'silverTop';
+      } else if (productId === 'silver_bottom') {
+        activeBottomModel = 'silverBottom';
       }
       
       setTimeout(() => toggleGallery(false), 350);
     }
 
+    // URLe modeli. Zwróć uwagę: silverBottom używa oryginalnej nazwy pliku ze zrzutu ekranu z literówką "botom", aby uniknąć błędów
     const URLS = {
       goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb",
-      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"
+      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb",
+      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top-silver.glb",
+      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-botom-silver.glb"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
@@ -336,7 +381,8 @@
     occluderMesh.position.z = 0; 
     scene.add(occluderMesh);
 
-    function setupModelPro(modelScene, isTop) {
+    // FUNKCJA USTAWIAJĄCA MODEL I ODBICIA (ZŁOTO/SREBRO)
+    function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
       const box = new THREE.Box3().setFromObject(modelScene);
       const size = box.getSize(new THREE.Vector3());
@@ -351,10 +397,17 @@
 
       modelScene.traverse((child) => {
         if (child.isMesh) {
-          child.material.color.setHex(0xffd700); // Głębokie złoto
-          child.material.metalness = 1.0; 
-          child.material.roughness = 0.08; 
-          child.material.envMapIntensity = 4.0; 
+          if (materialType === 'gold') {
+            child.material.color.setHex(0xffd700); 
+            child.material.metalness = 1.0; 
+            child.material.roughness = 0.08; 
+            child.material.envMapIntensity = 4.0; 
+          } else if (materialType === 'silver') {
+            child.material.color.setHex(0xe0e6ed); // Jasne, czyste srebro
+            child.material.metalness = 1.0; 
+            child.material.roughness = 0.02; // Srebro zrobione na większy "lustrzany" połysk
+            child.material.envMapIntensity = 5.5; 
+          }
         }
       });
       return wrapper;
@@ -362,16 +415,27 @@
 
     const loadedModels = {
       goldTop: null,
-      goldBottom: null
+      goldBottom: null,
+      silverTop: null,
+      silverBottom: null
     };
 
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
     
+    // Ładowanie złota
     gltfLoader.load(URLS.goldTop, (gltf) => { 
-      loadedModels.goldTop = setupModelPro(gltf.scene, true); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; 
+      loadedModels.goldTop = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; 
     });
     gltfLoader.load(URLS.goldBottom, (gltf) => { 
-      loadedModels.goldBottom = setupModelPro(gltf.scene, false); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; 
+      loadedModels.goldBottom = setupModelPro(gltf.scene, false, 'gold'); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; 
+    });
+    
+    // Ładowanie srebra
+    gltfLoader.load(URLS.silverTop, (gltf) => { 
+      loadedModels.silverTop = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.silverTop); loadedModels.silverTop.visible = false; 
+    });
+    gltfLoader.load(URLS.silverBottom, (gltf) => { 
+      loadedModels.silverBottom = setupModelPro(gltf.scene, false, 'silver'); scene.add(loadedModels.silverBottom); loadedModels.silverBottom.visible = false; 
     });
 
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
