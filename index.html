@@ -22,55 +22,56 @@
     .input_video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transform: scaleX(-1); }
     .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; transform: scaleX(-1); pointer-events: none; }
     
-    /* GŁÓWNY INTERFEJS (KAMERA) */
-    .ui-main { position: absolute; bottom: 60px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; pointer-events: auto; }
-    .logo { font-size: 22px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 4px; }
-    .subtext { font-size: 10px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; opacity: 0.8;}
+    /* CZYSTY I MINIMALISTYCZNY INTERFEJS */
+    .ui-main { position: absolute; bottom: 90px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; pointer-events: auto; }
+    .logo { font-size: 24px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 2px; text-align: center; }
+    .subtext { font-size: 9px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; opacity: 0.7; text-align: center; }
     
     .btn-browse {
-      background: rgba(212, 175, 55, 0.9); color: #0b0c10; border: none;
-      padding: 14px 32px; border-radius: 30px; font-family: 'Syne', sans-serif;
-      font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
-      cursor: pointer; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+      background: rgba(212, 175, 55, 0.95); color: #0b0c10; border: none;
+      padding: 14px 36px; border-radius: 30px; font-family: 'Syne', sans-serif;
+      font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
       transition: all 0.3s ease;
     }
     .btn-browse:active { transform: scale(0.95); }
 
-    /* GALERIA (MODAL) */
+    /* GALERIA (MODAL) - 4 KAFLKI */
     #galleryModal {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      background: rgba(11, 12, 16, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
       z-index: 30; display: flex; flex-direction: column;
       opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
-      padding-top: 60px;
+      padding-top: 50px; box-sizing: border-box;
     }
     #galleryModal.active { opacity: 1; pointer-events: auto; }
     
-    .gallery-header { display: flex; justify-content: space-between; align-items: center; padding: 0 30px; margin-bottom: 30px; }
-    .gallery-title { color: #f0f2f5; font-size: 20px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .gallery-header { display: flex; justify-content: space-between; align-items: center; padding: 0 24px; margin-bottom: 20px; }
+    .gallery-title { color: #f0f2f5; font-size: 18px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
     .close-btn { color: #f0f2f5; font-size: 28px; background: none; border: none; cursor: pointer; opacity: 0.7; }
     
     .products-grid {
-      display: flex; flex-direction: column; gap: 15px; padding: 0 20px;
-      overflow-y: auto; height: calc(100% - 150px);
+      display: flex; flex-direction: column; gap: 12px; padding: 0 20px;
+      overflow-y: auto; height: calc(100% - 120px); box-sizing: border-box;
+      padding-bottom: 40px;
     }
     
     .product-card {
-      display: flex; align-items: center; background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
-      padding: 15px; cursor: pointer; transition: all 0.2s ease;
+      display: flex; align-items: center; background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;
+      padding: 12px 16px; cursor: pointer; transition: all 0.2s ease;
     }
-    .product-card.selected { border-color: #d4af37; background: rgba(212, 175, 55, 0.1); }
+    .product-card.selected { border-color: #d4af37; background: rgba(212, 175, 55, 0.12); }
     .product-card.animate-click { animation: clickBounce 0.3s ease; }
     
     .product-thumb {
-      width: 60px; height: 60px; background: rgba(0,0,0,0.5); border-radius: 10px;
+      width: 50px; height: 50px; background: rgba(0,0,0,0.6); border-radius: 10px;
       margin-right: 15px; display: flex; justify-content: center; align-items: center;
-      border: 1px solid rgba(255,255,255,0.05); color: #888; font-size: 10px;
+      border: 1px solid rgba(212, 175, 55, 0.2); color: #d4af37; font-size: 9px; font-weight: 800; letter-spacing: 1px;
     }
     .product-info { display: flex; flex-direction: column; }
-    .product-name { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
-    .product-desc { color: #aaa; font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
+    .product-name { color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
+    .product-desc { color: #888; font-size: 10px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
 
     #loadingScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0c10; z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; text-align: center; padding: 20px; }
     .spinner { width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
@@ -91,45 +92,54 @@
   <video class="input_video" autoplay playsinline muted></video>
   <canvas class="output_canvas"></canvas>
 
-  <!-- GŁÓWNY WIDOK KAMERY -->
+  <!-- GŁÓWNY WIDOK KAMERY (Czysty ekran) -->
   <div class="ui-main">
     <div class="logo">Grillz Studio</div>
-    <div class="subtext">Live AR • Master Edition</div>
+    <div class="subtext">Live AR Fitting Spot</div>
     <button class="btn-browse" onclick="toggleGallery(true)">Przeglądaj Kolekcję</button>
   </div>
 
-  <!-- MODAL Z GALERIĄ -->
+  <!-- MODAL Z GALERIĄ (4 OPCJE) -->
   <div id="galleryModal">
     <div class="gallery-header">
-      <div class="gallery-title">Kolekcja</div>
+      <div class="gallery-title">Wybierz Model</div>
       <button class="close-btn" onclick="toggleGallery(false)">×</button>
     </div>
     
     <div class="products-grid">
-      <!-- Element 1 -->
+      <!-- 1. Gold Full -->
       <div class="product-card selected" onclick="selectProduct('gold_full', this)">
-        <div class="product-thumb">IMG</div>
+        <div class="product-thumb">GOLD</div>
         <div class="product-info">
-          <div class="product-name">Classic Gold</div>
-          <div class="product-desc">Komplet (Góra + Dół)</div>
+          <div class="product-name">Gold Full Set</div>
+          <div class="product-desc">Klasyczne Złoto (Komplet)</div>
         </div>
       </div>
       
-      <!-- Element 2 -->
-      <div class="product-card" onclick="selectProduct('gold_bottom', this)">
-        <div class="product-thumb">IMG</div>
+      <!-- 2. Gold Top -->
+      <div class="product-card" onclick="selectProduct('gold_top', this)">
+        <div class="product-thumb">TOP</div>
         <div class="product-info">
-          <div class="product-name">Classic Gold</div>
-          <div class="product-desc">Tylko Dół</div>
+          <div class="product-name">Gold Top</div>
+          <div class="product-desc">Klasyczne Złoto (Góra)</div>
         </div>
       </div>
 
-      <!-- Element 3 -->
-      <div class="product-card" onclick="selectProduct('silver_top_open', this)">
-        <div class="product-thumb">IMG</div>
+      <!-- 3. Gold Bottom -->
+      <div class="product-card" onclick="selectProduct('gold_bottom', this)">
+        <div class="product-thumb">BOT</div>
+        <div class="product-info">
+          <div class="product-name">Gold Bottom</div>
+          <div class="product-desc">Klasyczne Złoto (Dół)</div>
+        </div>
+      </div>
+
+      <!-- 4. Silver Open Face Top -->
+      <div class="product-card" onclick="selectProduct('silver_open', this)">
+        <div class="product-thumb">SILVER</div>
         <div class="product-info">
           <div class="product-name">Silver Open Face</div>
-          <div class="product-desc">Srebro • Tylko Góra</div>
+          <div class="product-desc">Srebro • Górny Łuk</div>
         </div>
       </div>
     </div>
@@ -137,9 +147,9 @@
 
   <script>
     // ==========================================
-    // 0. LOGIKA GALERII I STANÓW
+    // 0. LOGIKA GALERII I STANÓW (4 OPCJE)
     // ==========================================
-    let activeTopModel = 'goldTop';    // Domyślnie ładujemy Classic Gold
+    let activeTopModel = 'goldTop';    
     let activeBottomModel = 'goldBottom';
 
     function toggleGallery(show) {
@@ -148,25 +158,24 @@
     }
 
     function selectProduct(productId, element) {
-      // Usunięcie zaznaczenia z innych
       document.querySelectorAll('.product-card').forEach(card => card.classList.remove('selected'));
-      // Dodanie zaznaczenia do klikniętego i odpalenie animacji
       element.classList.add('selected', 'animate-click');
       setTimeout(() => element.classList.remove('animate-click'), 300);
 
-      // Logika wyboru modelu
       if (productId === 'gold_full') {
         activeTopModel = 'goldTop';
         activeBottomModel = 'goldBottom';
+      } else if (productId === 'gold_top') {
+        activeTopModel = 'goldTop';
+        activeBottomModel = null;
       } else if (productId === 'gold_bottom') {
         activeTopModel = null;
         activeBottomModel = 'goldBottom';
-      } else if (productId === 'silver_top_open') {
+      } else if (productId === 'silver_open') {
         activeTopModel = 'silverTopOpen';
         activeBottomModel = null;
       }
       
-      // Automatyczne zamknięcie galerii po kliknięciu
       setTimeout(() => toggleGallery(false), 350);
     }
 
@@ -180,14 +189,14 @@
     };
 
     // ==========================================
-    // 2. KONFIGURACJA POZYCJONOWANIA
+    // 2. KONFIGURACJA POZYCJONOWANIA I STABILIZACJI KĄTÓW
     // ==========================================
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
 
     const MOVE_BOTTOM_DOWN = 10.0; 
     
-    // MOCNE ODCHYLENIE DO TYŁU!
+    // Poprawione, mocne odchylenie do tyłu dla dolnego modelu
     const ROTATION_OFFSET_BOTTOM_X = -0.40; 
 
     const Z_DEPTH = -50; 
@@ -236,7 +245,7 @@
     scene.add(occluderMesh);
 
     // ==========================================
-    // 4. GENERATOR MODELI (OBSŁUGA ZŁOTA I SREBRA)
+    // 4. GENERATOR MODELI
     // ==========================================
     function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
@@ -258,9 +267,9 @@
             child.material.metalness = 1.0; 
             child.material.roughness = 0.12; 
           } else if (materialType === 'silver') {
-            child.material.color.setHex(0xffffff); // Jasne srebro
+            child.material.color.setHex(0xf0f2f5); 
             child.material.metalness = 1.0; 
-            child.material.roughness = 0.08; // Srebro mocniej odbija otoczenie
+            child.material.roughness = 0.06; 
           }
           child.material.envMapIntensity = 1.6; 
         }
@@ -268,7 +277,6 @@
       return wrapper;
     }
 
-    // Baza gotowych modeli 3D w pamięci
     const loadedModels = {
       goldTop: null,
       goldBottom: null,
@@ -288,7 +296,7 @@
     });
 
     // ==========================================
-    // 5. ANATOMICZNE ŚLEDZENIE Z NOWĄ LOGIKĄ
+    // 5. STABILNE ANATOMICZNE ŚLEDZENIE
     // ==========================================
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
@@ -300,7 +308,6 @@
         camera.updateProjectionMatrix();
       }
 
-      // Ukrywamy wszystko co klatkę (za chwilę pokażemy tylko wybrane)
       Object.values(loadedModels).forEach(model => { if(model) model.visible = false; });
 
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
@@ -327,10 +334,16 @@
 
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2.5);
-        const topFace = landmarks[10]; const bottomFace = landmarks[152];
-        const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
+        
+        // STABILIZACJA KĄTA X (Pochylenie głowy góra/dół oparte na nosie i środku ust zamiast czubka głowy)
+        // Zapobiega to "odwracaniu się" modelu przy pochylaniu głowy do przodu.
+        const noseTip = landmarks[1];
+        const upperLipCenter = landmarks[13];
+        let angleX = -Math.atan2((upperLipCenter.z - noseTip.z), (upperLipCenter.y - noseTip.y)) * 0.6;
+        // Bezpieczny limit (clamp), żeby model nigdy nie wykręcił się pod dziwnym kątem
+        angleX = Math.max(-0.4, Math.min(0.4, angleX));
 
-        // RENDER GÓRY (Jeśli jakaś jest wybrana)
+        // RENDER GÓRY
         if (activeTopModel && loadedModels[activeTopModel]) {
             const topModel = loadedModels[activeTopModel];
             const topLipInner = landmarks[13]; 
@@ -340,7 +353,7 @@
             topModel.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
         }
 
-        // RENDER DOŁU (Z mocnym odchyleniem ROTATION_OFFSET_BOTTOM_X)
+        // RENDER DOŁU
         if (activeBottomModel && loadedModels[activeBottomModel]) {
             const bottomModel = loadedModels[activeBottomModel];
             const bottomLipInner = landmarks[14];
