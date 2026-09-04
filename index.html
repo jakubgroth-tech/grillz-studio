@@ -21,9 +21,36 @@
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #0b0c10; overflow: hidden; font-family: 'Syne', sans-serif; }
     .input_video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transform: scaleX(-1); }
     .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; transform: scaleX(-1); pointer-events: none; }
-    .ui-layer { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
-    .logo { font-size: 24px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 8px; }
-    .subtext { font-size: 11px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 1px; }
+    
+    /* ZMODERNIZOWANE UI */
+    .ui-layer { 
+      position: absolute; bottom: 30px; left: 0; width: 100%; 
+      display: flex; flex-direction: column; align-items: center; z-index: 10; 
+      pointer-events: auto; /* Pozwala klikać przyciski */
+    }
+    .logo { 
+      font-size: 22px; font-weight: 800; color: #d4af37; 
+      text-transform: uppercase; letter-spacing: 4px; 
+      text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 4px; 
+    }
+    .subtext { font-size: 10px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; opacity: 0.8;}
+    
+    /* PANEL PRZEŁĄCZNIKÓW */
+    .toggle-panel {
+      display: flex; gap: 8px; background: rgba(11, 12, 16, 0.4);
+      padding: 6px; border-radius: 30px; border: 1px solid rgba(212, 175, 55, 0.3);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    .toggle-btn {
+      background: transparent; color: #f0f2f5; border: none;
+      padding: 10px 20px; border-radius: 24px; font-family: 'Syne', sans-serif;
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+      cursor: pointer; transition: all 0.3s ease;
+    }
+    .toggle-btn.active {
+      background: #d4af37; color: #0b0c10; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+    }
+
     #loadingScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0c10; z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; text-align: center; padding: 20px; }
     .spinner { width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -43,9 +70,29 @@
   <div class="ui-layer">
     <div class="logo">Grillz Studio</div>
     <div class="subtext">Live AR • Master Edition</div>
+    
+    <!-- NOWE PRZYCISKI DO WYBORU -->
+    <div class="toggle-panel">
+      <button class="toggle-btn" onclick="setMode('TOP')">Góra</button>
+      <button class="toggle-btn active" onclick="setMode('FULL')">Komplet</button>
+      <button class="toggle-btn" onclick="setMode('BOTTOM')">Dół</button>
+    </div>
   </div>
 
   <script>
+    // ==========================================
+    // 0. LOGIKA INTERFEJSU
+    // ==========================================
+    let currentMode = 'FULL'; // Domyślny tryb
+
+    function setMode(mode) {
+      currentMode = mode;
+      // Aktualizacja stylów przycisków
+      const btns = document.querySelectorAll('.toggle-btn');
+      btns.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
     // ==========================================
     // 1. LINKI GITHUB (RAW)
     // ==========================================
@@ -58,7 +105,7 @@
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
 
-    // Delikatne obniżenie dołu w dół ekranu (w pikselach). Jeśli będzie za nisko, zmień na np. 5.0
+    // Delikatne obniżenie dołu w dół ekranu (w pikselach)
     const MOVE_BOTTOM_DOWN = 10.0; 
 
     const Z_DEPTH = -50; 
@@ -110,7 +157,7 @@
     scene.add(occluderMesh);
 
     // ==========================================
-    // 5. AUTO-NORMALIZACJA (Wersja stabilna, która działała!)
+    // 5. AUTO-NORMALIZACJA (Wersja stabilna)
     // ==========================================
     function setupModelPro(modelScene, isTop) {
       const wrapper = new THREE.Group();
@@ -122,7 +169,6 @@
       const scale = 1.0 / size.x;
       modelScene.scale.set(scale, scale, scale);
 
-      // Zostawiłem starą, poprawną logikę punktu obrotu (z Twojego działającego kodu)
       const pivotY = isTop ? box.max.y : box.min.y; 
 
       modelScene.position.x = -center.x * scale;
@@ -158,7 +204,7 @@
     });
 
     // ==========================================
-    // 6. ANATOMICZNE ŚLEDZENIE 
+    // 6. ANATOMICZNE ŚLEDZENIE Z UWZGLĘDNIENIEM TRYBÓW
     // ==========================================
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
@@ -204,19 +250,23 @@
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // ZĘBY GÓRNE (NIC NIE ZMIENIAMY)
-        const topLipInner = landmarks[13]; 
-        topWrapper.visible = true;
-        topWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
-        topWrapper.rotation.set(angleX, angleY, -angleZ); 
-        topWrapper.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
+        // ZĘBY GÓRNE - Wyświetlane tylko w trybie 'TOP' lub 'FULL'
+        topWrapper.visible = (currentMode === 'FULL' || currentMode === 'TOP');
+        if (topWrapper.visible) {
+            const topLipInner = landmarks[13]; 
+            topWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
+            topWrapper.rotation.set(angleX, angleY, -angleZ); 
+            topWrapper.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
+        }
 
-        // ZĘBY DOLNE (Dodane tylko odjęcie MOVE_BOTTOM_DOWN na osi Y)
-        const bottomLipInner = landmarks[14];
-        bottomWrapper.visible = true;
-        bottomWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
-        bottomWrapper.rotation.set(angleX, angleY, -angleZ);
-        bottomWrapper.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN, Z_DEPTH);
+        // ZĘBY DOLNE - Wyświetlane tylko w trybie 'BOTTOM' lub 'FULL'
+        bottomWrapper.visible = (currentMode === 'FULL' || currentMode === 'BOTTOM');
+        if (bottomWrapper.visible) {
+            const bottomLipInner = landmarks[14];
+            bottomWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
+            bottomWrapper.rotation.set(angleX, angleY, -angleZ);
+            bottomWrapper.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN, Z_DEPTH);
+        }
 
       } else {
         if(topWrapper) topWrapper.visible = false;
