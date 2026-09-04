@@ -8,51 +8,55 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   
-  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 
   <style>
-    /* PALETA KOLORÓW PREMIUM (Zgodna z wytycznymi) */
-    :root {
-      --bg-dark: #101720;       /* Ciemny grafit / granat */
-      --teal-deep: #1A363D;     /* Głęboki petrol / teal */
-      --accent-orange: #E67E22; /* Energetyczny pomarańcz */
-      --accent-cyan: #45B39D;   /* Turkus / cyan */
-      --luxury-gold: #F1C40F;   /* Ciepłe, eleganckie złoto */
-    }
-
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg-dark); overflow: hidden; font-family: 'Syne', sans-serif; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #0b0c10; overflow: hidden; font-family: 'Syne', sans-serif; }
     
     .input_video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transform: scaleX(-1); }
     .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; transform: scaleX(-1); pointer-events: none; }
     
-    /* KINOWA WINIETA */
+    /* KINOWA WINIETA PREMIUM */
     .vignette {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: radial-gradient(circle, rgba(16,23,32,0) 35%, rgba(16,23,32,0.85) 100%);
+      background: radial-gradient(circle, rgba(11,12,16,0) 35%, rgba(11,12,16,0.85) 100%);
       z-index: 3; pointer-events: none;
     }
     
-    /* DUŻE LOGO I NAGŁÓWEK NA GÓRZE */
+    /* EKRAN POWITALNY (INTRO SPLASH Z ICON.PNG) */
+    #introSplash {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: #0b0c10; z-index: 60; display: flex; justify-content: center; align-items: center;
+      transition: opacity 0.8s ease;
+    }
+    .splash-logo {
+      width: 110px; height: 110px; object-fit: contain;
+      animation: emergeFromDarkness 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes emergeFromDarkness {
+      0% { opacity: 0; transform: scale(0.8); filter: drop-shadow(0 0 0px rgba(212,175,55,0)); }
+      50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(212,175,55,0.5)); }
+      100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 12px rgba(212,175,55,0.3)); }
+    }
+
+    /* NAGŁÓWEK NA GÓRZE */
     .ui-top { 
       position: absolute; top: 20px; left: 0; width: 100%; 
       display: flex; flex-direction: column; align-items: center; z-index: 10; 
       pointer-events: none; 
     }
     .logo-img { 
-      height: 85px; /* Znacznie powiększone logo */
-      object-fit: contain; 
-      filter: drop-shadow(0 4px 16px rgba(0,0,0,0.9)); 
+      height: 85px; object-fit: contain; 
+      filter: drop-shadow(0 4px 16px rgba(0,0,0,0.95)); 
     }
     .subtext { 
-      font-size: 8px; color: var(--luxury-gold); text-transform: uppercase; 
-      letter-spacing: 4px; margin-top: 6px; opacity: 0.95; 
+      font-size: 8px; color: #d4af37; text-transform: uppercase; 
+      letter-spacing: 4px; margin-top: 6px; opacity: 0.9; 
       text-shadow: 0 2px 6px rgba(0,0,0,0.9); font-weight: 700;
     }
 
@@ -62,19 +66,18 @@
       display: flex; justify-content: center; z-index: 10; pointer-events: auto;
     }
     .btn-browse {
-      background: linear-gradient(135deg, var(--luxury-gold), var(--accent-orange)); 
-      color: var(--bg-dark); border: none;
-      padding: 16px 44px; border-radius: 35px; font-family: 'Syne', sans-serif;
+      background: #d4af37; color: #0b0c10; border: none;
+      padding: 16px 42px; border-radius: 35px; font-family: 'Syne', sans-serif;
       font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 2.5px;
-      cursor: pointer; box-shadow: 0 6px 25px rgba(241, 196, 15, 0.35);
+      cursor: pointer; box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
       transition: all 0.3s ease;
     }
     .btn-browse:active { transform: scale(0.95); }
 
-    /* GALERIA (MODAL) W STYLU PREMIUM */
+    /* GALERIA (MODAL) */
     #galleryModal {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(16, 23, 32, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      background: rgba(11, 12, 16, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
       z-index: 30; display: flex; flex-direction: column;
       opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
       padding-top: 50px; box-sizing: border-box;
@@ -83,7 +86,7 @@
     
     .gallery-header { display: flex; justify-content: space-between; align-items: center; padding: 0 24px; margin-bottom: 20px; }
     .gallery-title { color: #f0f2f5; font-size: 18px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-    .close-btn { color: var(--accent-cyan); font-size: 28px; background: none; border: none; cursor: pointer; opacity: 0.8; }
+    .close-btn { color: #d4af37; font-size: 28px; background: none; border: none; cursor: pointer; opacity: 0.8; }
     
     .products-grid {
       display: flex; flex-direction: column; gap: 12px; padding: 0 20px;
@@ -92,49 +95,54 @@
     }
     
     .product-card {
-      display: flex; align-items: center; background: rgba(26, 54, 61, 0.4);
-      border: 1px solid rgba(69, 179, 157, 0.2); border-radius: 14px;
+      display: flex; align-items: center; background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 14px;
       padding: 12px 16px; cursor: pointer; transition: all 0.3s ease;
     }
-    .product-card.selected { border-color: var(--luxury-gold); background: rgba(241, 196, 15, 0.12); transform: scale(1.02); }
+    .product-card.selected { border-color: #d4af37; background: rgba(212, 175, 55, 0.15); transform: scale(1.02); }
     .product-card.animate-click { animation: clickBounce 0.3s ease; }
     
+    /* CZYSTE IKONY BEZ SZPETNYCH RAMEK */
     .product-thumb {
-      width: 55px; height: 55px; background: rgba(0,0,0,0.5); border-radius: 10px;
+      width: 55px; height: 55px; background: transparent; border-radius: 10px;
       margin-right: 15px; display: flex; justify-content: center; align-items: center;
-      border: 1px solid var(--accent-cyan); overflow: hidden;
+      border: none; overflow: hidden;
     }
     .product-thumb img {
-      width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s ease;
+      width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .product-card.selected .product-thumb img { transform: scale(1.2); }
+    .product-card.selected .product-thumb img { transform: scale(1.25); }
 
     .product-info { display: flex; flex-direction: column; }
     .product-name { color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
-    .product-desc { color: var(--accent-cyan); font-size: 10px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
+    .product-desc { color: #aaa; font-size: 10px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
 
     /* EKRAN ŁADOWANIA */
     #loadingScreen { 
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-      background: var(--bg-dark); z-index: 50; display: flex; flex-direction: column; 
+      background: #0b0c10; z-index: 50; display: flex; flex-direction: column; 
       justify-content: center; align-items: center; text-align: center; 
       transition: opacity 0.5s ease; padding: 20px; box-sizing: border-box; 
     }
     .spinner { 
-      width: 48px; height: 48px; border: 3px solid rgba(69, 179, 157, 0.2); 
-      border-top-color: var(--luxury-gold); border-radius: 50%; 
+      width: 48px; height: 48px; border: 3px solid rgba(212, 175, 55, 0.2); 
+      border-top-color: #d4af37; border-radius: 50%; 
       animation: spin 1s linear infinite; margin-bottom: 20px; 
     }
     
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes clickBounce { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
     
-    .loading-text { color: var(--luxury-gold); font-size: 13px; letter-spacing: 3px; line-height: 1.5; font-weight: 700; }
+    .loading-text { color: #d4af37; font-size: 13px; letter-spacing: 3px; line-height: 1.5; font-weight: 700; }
   </style>
 </head>
 <body>
 
-  <div id="loadingScreen">
+  <div id="introSplash">
+    <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon.png" alt="Grillz Studio Icon" class="splash-logo">
+  </div>
+
+  <div id="loadingScreen" style="opacity: 0; display: none;">
     <div class="spinner"></div>
     <div class="loading-text">WCZYTYWANIE KOLEKCJI...</div>
   </div>
@@ -143,18 +151,15 @@
   <div class="vignette"></div>
   <canvas class="output_canvas"></canvas>
 
-  <!-- NAGŁÓWEK NA GÓRZE Z POWIĘKSZONYM LOGO -->
   <div class="ui-top">
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/logo.png" alt="Grillz Studio" class="logo-img">
     <div class="subtext">Live AR Fitting Spot</div>
   </div>
 
-  <!-- PRZYCISK NA DOLE -->
   <div class="ui-bottom">
     <button class="btn-browse" onclick="toggleGallery(true)">PRZYMIARKA</button>
   </div>
 
-  <!-- MODAL Z GALERIĄ -->
   <div id="galleryModal">
     <div class="gallery-header">
       <div class="gallery-title">Wybierz Model</div>
@@ -205,9 +210,18 @@
   </div>
 
   <script>
-    // ==========================================
-    // 0. LOGIKA STANÓW (START NA PUSTO)
-    // ==========================================
+    // Płynne zamknięcie ekranu powitalnego Intro Splash
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const splash = document.getElementById('introSplash');
+        splash.style.opacity = '0';
+        setTimeout(() => {
+          splash.style.display = 'none';
+        }, 800);
+      }, 1600);
+    });
+
+    // Start aplikacji na pusto (nic nie wybrane automatycznie)
     let activeTopModel = null;    
     let activeBottomModel = null;
 
@@ -238,20 +252,14 @@
       setTimeout(() => toggleGallery(false), 350);
     }
 
-    // ==========================================
-    // 1. BAZA MODELI GITHUB (RAW)
-    // ==========================================
     const URLS = {
       goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb",
       goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb",
       silverTopOpen: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grill-openface-top-silver.glb"
     };
 
-    // ==========================================
-    // 2. KONFIGURACJA POZYCJONOWANIA (ZWIĘKSZONA SKALA DOŁU)
-    // ==========================================
     const SCALE_MULTIPLIER_TOP = 1.0; 
-    const SCALE_MULTIPLIER_BOTTOM = 1.12; // Zwiększona powierzchnia dolnego modelu
+    const SCALE_MULTIPLIER_BOTTOM = 1.12; 
 
     const MOVE_BOTTOM_DOWN = 10.0; 
     const ROTATION_OFFSET_BOTTOM_X = -0.40; 
@@ -262,14 +270,21 @@
     const loadingScreen = document.getElementById('loadingScreen');
 
     const loadingManager = new THREE.LoadingManager();
+    loadingManager.onStart = () => {
+      loadingScreen.style.display = 'flex';
+      loadingScreen.style.opacity = '1';
+    };
     loadingManager.onLoad = () => {
-      setTimeout(() => { loadingScreen.style.opacity = '0'; setTimeout(() => loadingScreen.style.display = 'none', 500); }, 800);
+      setTimeout(() => { 
+        loadingScreen.style.opacity = '0'; 
+        setTimeout(() => loadingScreen.style.display = 'none', 500); 
+      }, 800);
     };
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.6; 
+    renderer.toneMappingExposure = 1.8; // Zwiększona ekspozycja dla żywego połysku
 
     const scene = new THREE.Scene();
 
@@ -286,12 +301,29 @@
         texture.dispose(); pmremGenerator.dispose();
       });
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // ==========================================
+    // STUDIO OŚWIETLENIOWE BLENDER-STYLE (ELIMINACJA CZARNYCH PLAM W CIENIU)
+    // ==========================================
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
-    directionalLight.position.set(0, 10, 15);
-    scene.add(directionalLight);
+
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    hemiLight.position.set(0, 20, 0);
+    scene.add(hemiLight);
+
+    // Główne światło frontowe
+    const frontLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    frontLight.position.set(0, 5, 20);
+    scene.add(frontLight);
+
+    // Dodatkowe światła boczne wypełniające cienie
+    const leftLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    leftLight.position.set(-15, 5, 10);
+    scene.add(leftLight);
+
+    const rightLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    rightLight.position.set(15, 5, 10);
+    scene.add(rightLight);
 
     const occluderMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
     let occluderMesh = new THREE.Mesh(new THREE.BufferGeometry(), occluderMaterial);
@@ -317,12 +349,12 @@
             child.material.color.setHex(0xe6c55c); 
             child.material.metalness = 1.0; 
             child.material.roughness = 0.08; 
-            child.material.envMapIntensity = 3.0; 
+            child.material.envMapIntensity = 3.5; 
           } else if (materialType === 'silver') {
             child.material.color.setHex(0xd0d5dd); 
             child.material.metalness = 1.0; 
             child.material.roughness = 0.02; 
-            child.material.envMapIntensity = 4.5;
+            child.material.envMapIntensity = 5.0;
           }
         }
       });
