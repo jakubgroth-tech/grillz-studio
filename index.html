@@ -8,9 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   
+  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
+  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -28,20 +30,20 @@
       z-index: 3; pointer-events: none;
     }
     
-    /* EKRAN POWITALNY (INTRO SPLASH Z ICON.PNG) */
+    /* DUŻE EKRAN POWITALNY (INTRO SPLASH - DUŻA IKONA, 2.5 SEKUNDY) */
     #introSplash {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: #0b0c10; z-index: 60; display: flex; justify-content: center; align-items: center;
-      transition: opacity 0.8s ease;
+      transition: opacity 1.2s ease;
     }
     .splash-logo {
-      width: 110px; height: 110px; object-fit: contain;
-      animation: emergeFromDarkness 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      width: min(60vw, 260px); height: min(60vw, 260px); object-fit: contain;
+      animation: emergeFromDarkness 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes emergeFromDarkness {
-      0% { opacity: 0; transform: scale(0.8); filter: drop-shadow(0 0 0px rgba(212,175,55,0)); }
-      50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(212,175,55,0.5)); }
-      100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 12px rgba(212,175,55,0.3)); }
+      0% { opacity: 0; transform: scale(0.75); filter: drop-shadow(0 0 0px rgba(212,175,55,0)); }
+      40% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 35px rgba(212,175,55,0.6)); }
+      100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 15px rgba(212,175,55,0.35)); }
     }
 
     /* NAGŁÓWEK NA GÓRZE */
@@ -102,7 +104,6 @@
     .product-card.selected { border-color: #d4af37; background: rgba(212, 175, 55, 0.15); transform: scale(1.02); }
     .product-card.animate-click { animation: clickBounce 0.3s ease; }
     
-    /* CZYSTE IKONY BEZ SZPETNYCH RAMEK */
     .product-thumb {
       width: 55px; height: 55px; background: transparent; border-radius: 10px;
       margin-right: 15px; display: flex; justify-content: center; align-items: center;
@@ -138,6 +139,7 @@
 </head>
 <body>
 
+  <!-- INTRO SPLASH SCREEN (DUŻE LOGO, 2.5 SEKUNDY) -->
   <div id="introSplash">
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon.png" alt="Grillz Studio Icon" class="splash-logo">
   </div>
@@ -210,18 +212,17 @@
   </div>
 
   <script>
-    // Płynne zamknięcie ekranu powitalnego Intro Splash
+    // Intro Splash - widoczne 2.5 sekundy, potem powolny fade out
     window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('introSplash');
         splash.style.opacity = '0';
         setTimeout(() => {
           splash.style.display = 'none';
-        }, 800);
-      }, 1600);
+        }, 1200);
+      }, 2500);
     });
 
-    // Start aplikacji na pusto (nic nie wybrane automatycznie)
     let activeTopModel = null;    
     let activeBottomModel = null;
 
@@ -284,7 +285,7 @@
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.8; // Zwiększona ekspozycja dla żywego połysku
+    renderer.toneMappingExposure = 2.2; // Wyższa ekspozycja dla wyrazistego blasku
 
     const scene = new THREE.Scene();
 
@@ -302,27 +303,28 @@
       });
 
     // ==========================================
-    // STUDIO OŚWIETLENIOWE BLENDER-STYLE (ELIMINACJA CZARNYCH PLAM W CIENIU)
+    // ROZBUDOWANE STUDIO OŚWIETLENIOWE Z 3 PUNKTÓW (BLENDER STYLE)
     // ==========================================
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // Bardzo jasne światło otoczenia zapobiegające czarnym plamom
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-    hemiLight.position.set(0, 20, 0);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x555555, 0.8);
+    hemiLight.position.set(0, 30, 0);
     scene.add(hemiLight);
 
-    // Główne światło frontowe
-    const frontLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    frontLight.position.set(0, 5, 20);
+    // 1. Światło frontowe (Key Light) - delikatnie ciepłe dla złota
+    const frontLight = new THREE.DirectionalLight(0xfff5e6, 2.5);
+    frontLight.position.set(0, 10, 25);
     scene.add(frontLight);
 
-    // Dodatkowe światła boczne wypełniające cienie
-    const leftLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    leftLight.position.set(-15, 5, 10);
+    // 2. Światło boczne lewe (Fill Light)
+    const leftLight = new THREE.DirectionalLight(0xe6f0ff, 1.8);
+    leftLight.position.set(-20, 10, 10);
     scene.add(leftLight);
 
-    const rightLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    rightLight.position.set(15, 5, 10);
+    // 3. Światło boczne prawe / kontrowe (Rim Light)
+    const rightLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    rightLight.position.set(20, 10, 10);
     scene.add(rightLight);
 
     const occluderMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
@@ -346,15 +348,15 @@
       modelScene.traverse((child) => {
         if (child.isMesh) {
           if (materialType === 'gold') {
-            child.material.color.setHex(0xe6c55c); 
+            child.material.color.setHex(0xffd700); // Klasyczne, żywe złoto
             child.material.metalness = 1.0; 
             child.material.roughness = 0.08; 
-            child.material.envMapIntensity = 3.5; 
+            child.material.envMapIntensity = 4.0; 
           } else if (materialType === 'silver') {
-            child.material.color.setHex(0xd0d5dd); 
+            child.material.color.setHex(0xe0e6ed); 
             child.material.metalness = 1.0; 
             child.material.roughness = 0.02; 
-            child.material.envMapIntensity = 5.0;
+            child.material.envMapIntensity = 5.5;
           }
         }
       });
