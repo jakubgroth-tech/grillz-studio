@@ -8,11 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   
-  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -156,7 +154,6 @@
 </head>
 <body>
 
-  <!-- PŁYNNE INTRO -->
   <div id="introSplash">
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon.png" alt="Grillz Studio Icon" class="splash-logo">
   </div>
@@ -179,7 +176,6 @@
     <button class="btn-browse" onclick="toggleGallery(true)">PRZYMIARKA</button>
   </div>
 
-  <!-- GALERIA - ZŁOTO, SREBRO ORAZ KŁY WAMPIRA -->
   <div id="galleryModal">
     <div class="gallery-header">
       <div class="gallery-title">Wybierz Model</div>
@@ -187,7 +183,6 @@
     </div>
     
     <div class="products-grid">
-      <!-- 1. Gold Full -->
       <div class="product-card" onclick="selectProduct('gold_full', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz_full_gold.png" alt="Gold Full">
@@ -198,7 +193,6 @@
         </div>
       </div>
       
-      <!-- 2. Gold Top -->
       <div class="product-card" onclick="selectProduct('gold_top', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-top.png" alt="Gold Top">
@@ -209,7 +203,6 @@
         </div>
       </div>
 
-      <!-- 3. Gold Bottom -->
       <div class="product-card" onclick="selectProduct('gold_bottom', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-bottom.png" alt="Gold Bottom">
@@ -220,7 +213,6 @@
         </div>
       </div>
 
-      <!-- 4. Silver Full Set -->
       <div class="product-card" onclick="selectProduct('silver_full', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-full-silver.png" alt="Silver Full">
@@ -231,7 +223,6 @@
         </div>
       </div>
       
-      <!-- 5. Silver Top -->
       <div class="product-card" onclick="selectProduct('silver_top', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-top-silver.png" alt="Silver Top">
@@ -242,7 +233,6 @@
         </div>
       </div>
 
-      <!-- 6. Silver Bottom -->
       <div class="product-card" onclick="selectProduct('silver_bottom', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-bottom-silver.png" alt="Silver Bottom">
@@ -253,7 +243,6 @@
         </div>
       </div>
 
-      <!-- 7. Vampire Gold -->
       <div class="product-card" onclick="selectProduct('vamp_gold', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-gold.png" alt="Vampire Gold">
@@ -264,7 +253,6 @@
         </div>
       </div>
 
-      <!-- 8. Vampire Silver -->
       <div class="product-card" onclick="selectProduct('vamp_silver', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-silver.png" alt="Vampire Silver">
@@ -333,8 +321,8 @@
       goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=4",
       silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=4",
       silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=4",
-      vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=2",
-      vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=2"
+      vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=3",
+      vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=3"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
@@ -470,10 +458,10 @@
 
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
-    // Zmienne do wygładzania ruchu (eliminacja drgań / wibracji)
+    // Zmienne do wygładzania ruchu (eliminacja drgań)
     let smoothTop = { x: 0, y: 0, z: Z_DEPTH, rx: 0, ry: 0, rz: 0, scale: 0, initialized: false };
     let smoothBottom = { x: 0, y: 0, z: Z_DEPTH, rx: 0, ry: 0, rz: 0, scale: 0, initialized: false };
-    const LERP_FACTOR = 0.22; // Im mniejsza wartość, tym płynniejszy ruch (mniej drgań)
+    const LERP_FACTOR = 0.22; 
 
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -484,6 +472,10 @@
       }
 
       Object.values(loadedModels).forEach(model => { if(model) model.visible = false; });
+
+      // Wyłączenie okludera (maski warg) dla kłów wampira, aby ich wystające końcówki nie znikały przy zaciśniętych zębach
+      const isVampire = (activeTopModel === 'vampGold' || activeTopModel === 'vampSilver');
+      occluderMesh.visible = !isVampire;
 
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
@@ -536,9 +528,9 @@
               smoothTop.scale += (targetScale - smoothTop.scale) * LERP_FACTOR;
             }
 
-            // Mocniejsze zwężenie dla kłów wampira (szerokość zmniejszona do 0.70)
+            // Jeszcze mocniejsze zwężenie rozstawu kłów wampira (szerokość zmniejszona do 0.60)
             if (activeTopModel === 'vampGold' || activeTopModel === 'vampSilver') {
-              topModel.scale.set(smoothTop.scale * 0.70, smoothTop.scale, smoothTop.scale);
+              topModel.scale.set(smoothTop.scale * 0.60, smoothTop.scale, smoothTop.scale);
             } else {
               topModel.scale.set(smoothTop.scale, smoothTop.scale, smoothTop.scale);
             }
