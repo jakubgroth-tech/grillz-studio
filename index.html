@@ -8,9 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
+  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
+  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -51,14 +53,13 @@
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb";
 
     // ==========================================
-    // 2. KONFIGURACJA (SKALA I POZYCJA)
+    // 2. KONFIGURACJA 
     // ==========================================
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
 
-    // Delikatne obniżenie dołu. Zaczynamy od zera, bo nowy Pivot powinien ułożyć go naturalnie. 
-    // Zwiększ np. na 10.0, jeśli ma być niżej, lub użyj wartości ujemnej (np. -10.0), żeby dać go wyżej.
-    const MOVE_BOTTOM_DOWN = 0.0; 
+    // Delikatne obniżenie dołu w dół ekranu (w pikselach). Jeśli będzie za nisko, zmień na np. 5.0
+    const MOVE_BOTTOM_DOWN = 10.0; 
 
     const Z_DEPTH = -50; 
 
@@ -101,7 +102,7 @@
     scene.add(directionalLight);
 
     // ==========================================
-    // 4. MASKA GŁĘBI (NIEWIDZIALNA TARCZA)
+    // 4. MASKA GŁĘBI
     // ==========================================
     const occluderMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
     let occluderMesh = new THREE.Mesh(new THREE.BufferGeometry(), occluderMaterial);
@@ -109,7 +110,7 @@
     scene.add(occluderMesh);
 
     // ==========================================
-    // 5. AUTO-NORMALIZACJA MODELI (Z POPRAWIONYM PIVOTEM!)
+    // 5. AUTO-NORMALIZACJA (Wersja stabilna, która działała!)
     // ==========================================
     function setupModelPro(modelScene, isTop) {
       const wrapper = new THREE.Group();
@@ -121,9 +122,8 @@
       const scale = 1.0 / size.x;
       modelScene.scale.set(scale, scale, scale);
 
-      // KLUCZOWA POPRAWKA: Oba modele podwieszamy za górną krawędź (box.max.y).
-      // Zapobiega to windowaniu dolnego modelu nad zęby.
-      const pivotY = box.max.y; 
+      // Zostawiłem starą, poprawną logikę punktu obrotu (z Twojego działającego kodu)
+      const pivotY = isTop ? box.max.y : box.min.y; 
 
       modelScene.position.x = -center.x * scale;
       modelScene.position.y = -pivotY * scale;
@@ -204,14 +204,14 @@
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // ZĘBY GÓRNE
+        // ZĘBY GÓRNE (NIC NIE ZMIENIAMY)
         const topLipInner = landmarks[13]; 
         topWrapper.visible = true;
         topWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
         topWrapper.rotation.set(angleX, angleY, -angleZ); 
         topWrapper.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
 
-        // ZĘBY DOLNE (Teraz poprawnie podpięty suwak przesunięcia i nowy Pivot)
+        // ZĘBY DOLNE (Dodane tylko odjęcie MOVE_BOTTOM_DOWN na osi Y)
         const bottomLipInner = landmarks[14];
         bottomWrapper.visible = true;
         bottomWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
