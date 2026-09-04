@@ -6,7 +6,7 @@
   <title>GRILLZ STUDIO — LIVE AR</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   
   <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -22,37 +22,62 @@
     .input_video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transform: scaleX(-1); }
     .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; transform: scaleX(-1); pointer-events: none; }
     
-    /* UI WYŻEJ, ABY OMINĄĆ BANER NETLIFY I PASEK SAFARI */
-    .ui-layer { 
-      position: absolute; bottom: 80px; left: 0; width: 100%; 
-      display: flex; flex-direction: column; align-items: center; z-index: 10; 
-      pointer-events: auto; 
-    }
-    .logo { 
-      font-size: 22px; font-weight: 800; color: #d4af37; 
-      text-transform: uppercase; letter-spacing: 4px; 
-      text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 4px; 
-    }
-    .subtext { font-size: 10px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; opacity: 0.8;}
+    /* GŁÓWNY INTERFEJS (KAMERA) */
+    .ui-main { position: absolute; bottom: 60px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; pointer-events: auto; }
+    .logo { font-size: 22px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 4px; }
+    .subtext { font-size: 10px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; opacity: 0.8;}
     
-    .toggle-panel {
-      display: flex; gap: 8px; background: rgba(11, 12, 16, 0.4);
-      padding: 6px; border-radius: 30px; border: 1px solid rgba(212, 175, 55, 0.3);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    .btn-browse {
+      background: rgba(212, 175, 55, 0.9); color: #0b0c10; border: none;
+      padding: 14px 32px; border-radius: 30px; font-family: 'Syne', sans-serif;
+      font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
+      cursor: pointer; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+      transition: all 0.3s ease;
     }
-    .toggle-btn {
-      background: transparent; color: #f0f2f5; border: none;
-      padding: 10px 20px; border-radius: 24px; font-family: 'Syne', sans-serif;
-      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-      cursor: pointer; transition: all 0.3s ease;
-    }
-    .toggle-btn.active {
-      background: #d4af37; color: #0b0c10; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
-    }
+    .btn-browse:active { transform: scale(0.95); }
 
-    #loadingScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0c10; z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; text-align: center; padding: 20px; }
+    /* GALERIA (MODAL) */
+    #galleryModal {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      z-index: 30; display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+      padding-top: 60px;
+    }
+    #galleryModal.active { opacity: 1; pointer-events: auto; }
+    
+    .gallery-header { display: flex; justify-content: space-between; align-items: center; padding: 0 30px; margin-bottom: 30px; }
+    .gallery-title { color: #f0f2f5; font-size: 20px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .close-btn { color: #f0f2f5; font-size: 28px; background: none; border: none; cursor: pointer; opacity: 0.7; }
+    
+    .products-grid {
+      display: flex; flex-direction: column; gap: 15px; padding: 0 20px;
+      overflow-y: auto; height: calc(100% - 150px);
+    }
+    
+    .product-card {
+      display: flex; align-items: center; background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
+      padding: 15px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .product-card.selected { border-color: #d4af37; background: rgba(212, 175, 55, 0.1); }
+    .product-card.animate-click { animation: clickBounce 0.3s ease; }
+    
+    .product-thumb {
+      width: 60px; height: 60px; background: rgba(0,0,0,0.5); border-radius: 10px;
+      margin-right: 15px; display: flex; justify-content: center; align-items: center;
+      border: 1px solid rgba(255,255,255,0.05); color: #888; font-size: 10px;
+    }
+    .product-info { display: flex; flex-direction: column; }
+    .product-name { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+    .product-desc { color: #aaa; font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
+
+    #loadingScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0c10; z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; text-align: center; padding: 20px; }
     .spinner { width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes clickBounce { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
+    
     .loading-text { color: #d4af37; font-size: 14px; letter-spacing: 2px; line-height: 1.5; }
   </style>
 </head>
@@ -60,55 +85,110 @@
 
   <div id="loadingScreen">
     <div class="spinner"></div>
-    <div class="loading-text">ŁADOWANIE SILNIKA AR...</div>
+    <div class="loading-text">Wczytywanie Kolekcji...</div>
   </div>
 
   <video class="input_video" autoplay playsinline muted></video>
   <canvas class="output_canvas"></canvas>
 
-  <div class="ui-layer">
+  <!-- GŁÓWNY WIDOK KAMERY -->
+  <div class="ui-main">
     <div class="logo">Grillz Studio</div>
     <div class="subtext">Live AR • Master Edition</div>
+    <button class="btn-browse" onclick="toggleGallery(true)">Przeglądaj Kolekcję</button>
+  </div>
+
+  <!-- MODAL Z GALERIĄ -->
+  <div id="galleryModal">
+    <div class="gallery-header">
+      <div class="gallery-title">Kolekcja</div>
+      <button class="close-btn" onclick="toggleGallery(false)">×</button>
+    </div>
     
-    <div class="toggle-panel">
-      <button class="toggle-btn" onclick="setMode('TOP')">Góra</button>
-      <button class="toggle-btn active" onclick="setMode('FULL')">Komplet</button>
-      <button class="toggle-btn" onclick="setMode('BOTTOM')">Dół</button>
+    <div class="products-grid">
+      <!-- Element 1 -->
+      <div class="product-card selected" onclick="selectProduct('gold_full', this)">
+        <div class="product-thumb">IMG</div>
+        <div class="product-info">
+          <div class="product-name">Classic Gold</div>
+          <div class="product-desc">Komplet (Góra + Dół)</div>
+        </div>
+      </div>
+      
+      <!-- Element 2 -->
+      <div class="product-card" onclick="selectProduct('gold_bottom', this)">
+        <div class="product-thumb">IMG</div>
+        <div class="product-info">
+          <div class="product-name">Classic Gold</div>
+          <div class="product-desc">Tylko Dół</div>
+        </div>
+      </div>
+
+      <!-- Element 3 -->
+      <div class="product-card" onclick="selectProduct('silver_top_open', this)">
+        <div class="product-thumb">IMG</div>
+        <div class="product-info">
+          <div class="product-name">Silver Open Face</div>
+          <div class="product-desc">Srebro • Tylko Góra</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
     // ==========================================
-    // 0. LOGIKA INTERFEJSU
+    // 0. LOGIKA GALERII I STANÓW
     // ==========================================
-    let currentMode = 'FULL'; 
+    let activeTopModel = 'goldTop';    // Domyślnie ładujemy Classic Gold
+    let activeBottomModel = 'goldBottom';
 
-    function setMode(mode) {
-      currentMode = mode;
-      const btns = document.querySelectorAll('.toggle-btn');
-      btns.forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+    function toggleGallery(show) {
+      const modal = document.getElementById('galleryModal');
+      show ? modal.classList.add('active') : modal.classList.remove('active');
+    }
+
+    function selectProduct(productId, element) {
+      // Usunięcie zaznaczenia z innych
+      document.querySelectorAll('.product-card').forEach(card => card.classList.remove('selected'));
+      // Dodanie zaznaczenia do klikniętego i odpalenie animacji
+      element.classList.add('selected', 'animate-click');
+      setTimeout(() => element.classList.remove('animate-click'), 300);
+
+      // Logika wyboru modelu
+      if (productId === 'gold_full') {
+        activeTopModel = 'goldTop';
+        activeBottomModel = 'goldBottom';
+      } else if (productId === 'gold_bottom') {
+        activeTopModel = null;
+        activeBottomModel = 'goldBottom';
+      } else if (productId === 'silver_top_open') {
+        activeTopModel = 'silverTopOpen';
+        activeBottomModel = null;
+      }
+      
+      // Automatyczne zamknięcie galerii po kliknięciu
+      setTimeout(() => toggleGallery(false), 350);
     }
 
     // ==========================================
-    // 1. LINKI GITHUB (RAW)
+    // 1. BAZA MODELI GITHUB (RAW)
     // ==========================================
-    const URL_TOP = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb";
-    const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb";
+    const URLS = {
+      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb",
+      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb",
+      silverTopOpen: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grill-openface-top-silver.glb"
+    };
 
     // ==========================================
-    // 2. KONFIGURACJA ZAAWANSOWANA (Ręczne dopasowanie)
+    // 2. KONFIGURACJA POZYCJONOWANIA
     // ==========================================
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
 
-    // OBNIŻENIE DOŁU (w pikselach). Jeśli nadal jest lekko za wysoko, zmień na np. 15.0
     const MOVE_BOTTOM_DOWN = 10.0; 
-
-    // KĄT POCHYLENIA DOŁU (W Radianach). 
-    // - Minus (np. -0.15) odchyla zęby DO TYŁU (w stronę gardła). 
-    // - Plus (np. 0.15) przechyla zęby DO PRZODU (wypycha do kamery).
-    const ROTATION_OFFSET_BOTTOM_X = -0.15; 
+    
+    // MOCNE ODCHYLENIE DO TYŁU!
+    const ROTATION_OFFSET_BOTTOM_X = -0.40; 
 
     const Z_DEPTH = -50; 
 
@@ -150,63 +230,65 @@
     directionalLight.position.set(0, 5, 10);
     scene.add(directionalLight);
 
-    // ==========================================
-    // 4. MASKA GŁĘBI
-    // ==========================================
     const occluderMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
     let occluderMesh = new THREE.Mesh(new THREE.BufferGeometry(), occluderMaterial);
     occluderMesh.position.z = 0; 
     scene.add(occluderMesh);
 
     // ==========================================
-    // 5. AUTO-NORMALIZACJA
+    // 4. GENERATOR MODELI (OBSŁUGA ZŁOTA I SREBRA)
     // ==========================================
-    function setupModelPro(modelScene, isTop) {
+    function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
-      
       const box = new THREE.Box3().setFromObject(modelScene);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
 
       const scale = 1.0 / size.x;
       modelScene.scale.set(scale, scale, scale);
-
       const pivotY = isTop ? box.max.y : box.min.y; 
 
-      modelScene.position.x = -center.x * scale;
-      modelScene.position.y = -pivotY * scale;
-      modelScene.position.z = -box.max.z * scale; 
-
+      modelScene.position.set(-center.x * scale, -pivotY * scale, -box.max.z * scale);
       wrapper.add(modelScene);
 
       modelScene.traverse((child) => {
         if (child.isMesh) {
-          child.material.color.setHex(0xe5c573); 
-          child.material.metalness = 1.0; 
-          child.material.roughness = 0.12; 
+          if (materialType === 'gold') {
+            child.material.color.setHex(0xe5c573); 
+            child.material.metalness = 1.0; 
+            child.material.roughness = 0.12; 
+          } else if (materialType === 'silver') {
+            child.material.color.setHex(0xffffff); // Jasne srebro
+            child.material.metalness = 1.0; 
+            child.material.roughness = 0.08; // Srebro mocniej odbija otoczenie
+          }
           child.material.envMapIntensity = 1.6; 
         }
       });
       return wrapper;
     }
 
-    let topWrapper = null;
-    let bottomWrapper = null;
+    // Baza gotowych modeli 3D w pamięci
+    const loadedModels = {
+      goldTop: null,
+      goldBottom: null,
+      silverTopOpen: null
+    };
 
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
-    gltfLoader.load(URL_TOP, (gltf) => {
-      topWrapper = setupModelPro(gltf.scene, true); 
-      scene.add(topWrapper);
-      topWrapper.visible = false; 
+    
+    gltfLoader.load(URLS.goldTop, (gltf) => { 
+      loadedModels.goldTop = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; 
     });
-    gltfLoader.load(URL_BOTTOM, (gltf) => {
-      bottomWrapper = setupModelPro(gltf.scene, false); 
-      scene.add(bottomWrapper);
-      bottomWrapper.visible = false;
+    gltfLoader.load(URLS.goldBottom, (gltf) => { 
+      loadedModels.goldBottom = setupModelPro(gltf.scene, false, 'gold'); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; 
+    });
+    gltfLoader.load(URLS.silverTopOpen, (gltf) => { 
+      loadedModels.silverTopOpen = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.silverTopOpen); loadedModels.silverTopOpen.visible = false; 
     });
 
     // ==========================================
-    // 6. ANATOMICZNE ŚLEDZENIE
+    // 5. ANATOMICZNE ŚLEDZENIE Z NOWĄ LOGIKĄ
     // ==========================================
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
@@ -218,16 +300,15 @@
         camera.updateProjectionMatrix();
       }
 
-      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && topWrapper && bottomWrapper) {
+      // Ukrywamy wszystko co klatkę (za chwilę pokażemy tylko wybrane)
+      Object.values(loadedModels).forEach(model => { if(model) model.visible = false; });
+
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
 
+        // Maska Otworu Ust
         const maskShape = new THREE.Shape();
-        maskShape.moveTo(-width, -height);
-        maskShape.lineTo(width, -height);
-        maskShape.lineTo(width, height);
-        maskShape.lineTo(-width, height);
-        maskShape.lineTo(-width, -height);
-
+        maskShape.moveTo(-width, -height); maskShape.lineTo(width, -height); maskShape.lineTo(width, height); maskShape.lineTo(-width, height); maskShape.lineTo(-width, -height);
         const mouthHole = new THREE.Path();
         const startPt = landmarks[MOUTH_HOLE_INDICES[0]];
         mouthHole.moveTo((startPt.x - 0.5) * width, -(startPt.y - 0.5) * height);
@@ -236,7 +317,6 @@
             mouthHole.lineTo((pt.x - 0.5) * width, -(pt.y - 0.5) * height);
         }
         maskShape.holes.push(mouthHole); 
-
         const newGeo = new THREE.ShapeGeometry(maskShape);
         if(occluderMesh.geometry) occluderMesh.geometry.dispose();
         occluderMesh.geometry = newGeo;
@@ -250,39 +330,33 @@
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // ZĘBY GÓRNE
-        topWrapper.visible = (currentMode === 'FULL' || currentMode === 'TOP');
-        if (topWrapper.visible) {
+        // RENDER GÓRY (Jeśli jakaś jest wybrana)
+        if (activeTopModel && loadedModels[activeTopModel]) {
+            const topModel = loadedModels[activeTopModel];
             const topLipInner = landmarks[13]; 
-            topWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
-            topWrapper.rotation.set(angleX, angleY, -angleZ); 
-            topWrapper.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
+            topModel.visible = true;
+            topModel.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
+            topModel.rotation.set(angleX, angleY, -angleZ); 
+            topModel.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
         }
 
-        // ZĘBY DOLNE (Teraz z nową rotacją - odchyleniem do tyłu!)
-        bottomWrapper.visible = (currentMode === 'FULL' || currentMode === 'BOTTOM');
-        if (bottomWrapper.visible) {
+        // RENDER DOŁU (Z mocnym odchyleniem ROTATION_OFFSET_BOTTOM_X)
+        if (activeBottomModel && loadedModels[activeBottomModel]) {
+            const bottomModel = loadedModels[activeBottomModel];
             const bottomLipInner = landmarks[14];
-            bottomWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
-            
-            // TUTAJ dodany jest ROTATION_OFFSET_BOTTOM_X do głównej osi X (pochylenie)
-            bottomWrapper.rotation.set(angleX + ROTATION_OFFSET_BOTTOM_X, angleY, -angleZ);
-            
-            bottomWrapper.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN, Z_DEPTH);
+            bottomModel.visible = true;
+            bottomModel.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
+            bottomModel.rotation.set(angleX + ROTATION_OFFSET_BOTTOM_X, angleY, -angleZ);
+            bottomModel.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN, Z_DEPTH);
         }
 
       } else {
-        if(topWrapper) topWrapper.visible = false;
-        if(bottomWrapper) bottomWrapper.visible = false;
         if(occluderMesh.geometry) { occluderMesh.geometry.dispose(); occluderMesh.geometry = new THREE.BufferGeometry(); }
       }
 
       renderer.render(scene, camera);
     }
 
-    // ==========================================
-    // 7. KAMERA
-    // ==========================================
     const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
     faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
     faceMesh.onResults(onResults);
