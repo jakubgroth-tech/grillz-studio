@@ -30,20 +30,37 @@
       z-index: 3; pointer-events: none;
     }
     
-    /* EKRAN POWITALNY (INTRO SPLASH - ~4 SEKUNDY) */
+    /* NOWE PŁYNNE INTRO Z POTĘŻNĄ POŚWIATĄ */
     #introSplash {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: #0b0c10; z-index: 60; display: flex; justify-content: center; align-items: center;
-      transition: opacity 1.5s ease;
+      transition: opacity 0.8s ease-in-out;
     }
     .splash-logo {
       width: min(75vw, 320px); height: min(75vw, 320px); object-fit: contain;
-      animation: emergeFromDarkness 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fluidSplash 3.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }
-    @keyframes emergeFromDarkness {
-      0% { opacity: 0; transform: scale(0.7); filter: drop-shadow(0 0 0px rgba(212,175,55,0)); }
-      40% { opacity: 1; transform: scale(1.08); filter: drop-shadow(0 0 45px rgba(212,175,55,0.7)); }
-      100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 20px rgba(212,175,55,0.4)); }
+    @keyframes fluidSplash {
+      0% { 
+        opacity: 0; 
+        transform: scale(0.5); 
+        filter: drop-shadow(0 0 0px rgba(212,175,55,0)); 
+      }
+      20% { 
+        opacity: 1; 
+        transform: scale(0.85); 
+        filter: drop-shadow(0 0 50px rgba(212,175,55,0.6)); 
+      }
+      80% { 
+        opacity: 1; 
+        transform: scale(1.15); 
+        filter: drop-shadow(0 0 120px rgba(212,175,55,1)); /* Szczytowa faza jasnej poświaty */
+      }
+      100% { 
+        opacity: 0; 
+        transform: scale(1.3); /* Cały czas w ruchu powiększającym aż do końca */
+        filter: drop-shadow(0 0 20px rgba(212,175,55,0)); 
+      }
     }
 
     /* NAGŁÓWEK NA GÓRZE */
@@ -107,7 +124,7 @@
     .product-thumb {
       width: 55px; height: 55px; background: transparent; border-radius: 10px;
       margin-right: 15px; display: flex; justify-content: center; align-items: center;
-      border: none; overflow: hidden; color: #d4af37; font-size: 18px; font-weight: 700;
+      border: none; overflow: hidden;
     }
     .product-thumb img {
       width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -139,7 +156,7 @@
 </head>
 <body>
 
-  <!-- INTRO SPLASH SCREEN (~4 SEKUNDY) -->
+  <!-- PŁYNNE INTRO Z EFEKTEM NIESKOŃCZONEGO RUCHU -->
   <div id="introSplash">
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon.png" alt="Grillz Studio Icon" class="splash-logo">
   </div>
@@ -201,80 +218,23 @@
           <div class="product-desc">Tylko Dół</div>
         </div>
       </div>
-
-      <!-- 4. Silver Open Face Top -->
-      <div class="product-card" onclick="selectProduct('silver_open', this)">
-        <div class="product-thumb">
-          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grill-openface-top-silver.png" alt="Silver Open Face">
-        </div>
-        <div class="product-info">
-          <div class="product-name">Silver Open Face</div>
-          <div class="product-desc">Srebro • Górny Łuk</div>
-        </div>
-      </div>
-
-      <!-- 5. Silver Full Set (Nowe) -->
-      <div class="product-card" onclick="selectProduct('silver_full', this)">
-        <div class="product-thumb">✨</div>
-        <div class="product-info">
-          <div class="product-name">Silver Full Set</div>
-          <div class="product-desc">Srebro • Komplet (Góra + Dół)</div>
-        </div>
-      </div>
-
-      <!-- 6. Silver Top (Nowe) -->
-      <div class="product-card" onclick="selectProduct('silver_top', this)">
-        <div class="product-thumb">✨</div>
-        <div class="product-info">
-          <div class="product-name">Silver Top</div>
-          <div class="product-desc">Srebro • Tylko Góra</div>
-        </div>
-      </div>
-
-      <!-- 7. Silver Bottom (Nowe) -->
-      <div class="product-card" onclick="selectProduct('silver_bottom', this)">
-        <div class="product-thumb">✨</div>
-        <div class="product-info">
-          <div class="product-name">Silver Bottom</div>
-          <div class="product-desc">Srebro • Tylko Dół</div>
-        </div>
-      </div>
-
-      <!-- 8. Silver Single Top Left -->
-      <div class="product-card" onclick="selectProduct('silver_single_top_left', this)">
-        <div class="product-thumb">⚡</div>
-        <div class="product-info">
-          <div class="product-name">Silver Single • Góra (Lewy)</div>
-          <div class="product-desc">Srebro • Pojedynczy ząb</div>
-        </div>
-      </div>
-
-      <!-- 9. Silver Single Top Right -->
-      <div class="product-card" onclick="selectProduct('silver_single_top_right', this)">
-        <div class="product-thumb">⚡</div>
-        <div class="product-info">
-          <div class="product-name">Silver Single • Góra (Prawy)</div>
-          <div class="product-desc">Srebro • Pojedynczy ząb</div>
-        </div>
-      </div>
     </div>
   </div>
 
   <script>
-    // Intro Splash - widoczne około 4 sekundy, potem powolny fade out
+    // Logika zniknięcia czarnego tła idealnie podłączona pod moment zanikania animacji loga
     window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('introSplash');
-        splash.style.opacity = '0';
+        splash.style.opacity = '0'; // Zaczyna znikać tło
         setTimeout(() => {
           splash.style.display = 'none';
-        }, 1500);
-      }, 4000);
+        }, 800); // 800ms na transition ease-in-out z CSS
+      }, 2500); // Tło zaczyna zanikać pod koniec animacji fluidSplash
     });
 
     let activeTopModel = null;    
     let activeBottomModel = null;
-    let activeTopSide = 'center'; // 'center', 'left', 'right'
 
     function toggleGallery(show) {
       const modal = document.getElementById('galleryModal');
@@ -288,7 +248,6 @@
 
       activeTopModel = null;
       activeBottomModel = null;
-      activeTopSide = 'center';
 
       if (productId === 'gold_full') {
         activeTopModel = 'goldTop';
@@ -297,21 +256,6 @@
         activeTopModel = 'goldTop';
       } else if (productId === 'gold_bottom') {
         activeBottomModel = 'goldBottom';
-      } else if (productId === 'silver_open') {
-        activeTopModel = 'silverTopOpen';
-      } else if (productId === 'silver_full') {
-        activeTopModel = 'silverTop';
-        activeBottomModel = 'silverBottom';
-      } else if (productId === 'silver_top') {
-        activeTopModel = 'silverTop';
-      } else if (productId === 'silver_bottom') {
-        activeBottomModel = 'silverBottom';
-      } else if (productId === 'silver_single_top_left') {
-        activeTopModel = 'silverSingle';
-        activeTopSide = 'left';
-      } else if (productId === 'silver_single_top_right') {
-        activeTopModel = 'silverSingle';
-        activeTopSide = 'right';
       }
       
       setTimeout(() => toggleGallery(false), 350);
@@ -319,11 +263,7 @@
 
     const URLS = {
       goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb",
-      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb",
-      silverTopOpen: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grill-openface-top-silver.glb",
-      silverSingle: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-openface-single.glb",
-      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top-silver.glb",
-      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom-silver.glb"
+      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
@@ -396,14 +336,13 @@
     occluderMesh.position.z = 0; 
     scene.add(occluderMesh);
 
-    function setupModelPro(modelScene, isTop, materialType, isSingle) {
+    function setupModelPro(modelScene, isTop) {
       const wrapper = new THREE.Group();
       const box = new THREE.Box3().setFromObject(modelScene);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
 
-      const baseScale = isSingle ? 0.16 : 1.0;
-      const scale = baseScale / size.x;
+      const scale = 1.0 / size.x;
       modelScene.scale.set(scale, scale, scale);
       const pivotY = isTop ? box.max.y : box.min.y; 
 
@@ -412,17 +351,10 @@
 
       modelScene.traverse((child) => {
         if (child.isMesh) {
-          if (materialType === 'gold') {
-            child.material.color.setHex(0xffd700); 
-            child.material.metalness = 1.0; 
-            child.material.roughness = 0.08; 
-            child.material.envMapIntensity = 4.0; 
-          } else if (materialType === 'silver') {
-            child.material.color.setHex(0xe0e6ed); 
-            child.material.metalness = 1.0; 
-            child.material.roughness = 0.02; 
-            child.material.envMapIntensity = 5.5;
-          }
+          child.material.color.setHex(0xffd700); // Głębokie złoto
+          child.material.metalness = 1.0; 
+          child.material.roughness = 0.08; 
+          child.material.envMapIntensity = 4.0; 
         }
       });
       return wrapper;
@@ -430,32 +362,16 @@
 
     const loadedModels = {
       goldTop: null,
-      goldBottom: null,
-      silverTopOpen: null,
-      silverSingle: null,
-      silverTop: null,
-      silverBottom: null
+      goldBottom: null
     };
 
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
     
     gltfLoader.load(URLS.goldTop, (gltf) => { 
-      loadedModels.goldTop = setupModelPro(gltf.scene, true, 'gold', false); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; 
+      loadedModels.goldTop = setupModelPro(gltf.scene, true); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; 
     });
     gltfLoader.load(URLS.goldBottom, (gltf) => { 
-      loadedModels.goldBottom = setupModelPro(gltf.scene, false, 'gold', false); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; 
-    });
-    gltfLoader.load(URLS.silverTopOpen, (gltf) => { 
-      loadedModels.silverTopOpen = setupModelPro(gltf.scene, true, 'silver', false); scene.add(loadedModels.silverTopOpen); loadedModels.silverTopOpen.visible = false; 
-    });
-    gltfLoader.load(URLS.silverSingle, (gltf) => { 
-      loadedModels.silverSingle = setupModelPro(gltf.scene, true, 'silver', true); scene.add(loadedModels.silverSingle); loadedModels.silverSingle.visible = false; 
-    });
-    gltfLoader.load(URLS.silverTop, (gltf) => { 
-      loadedModels.silverTop = setupModelPro(gltf.scene, true, 'silver', false); scene.add(loadedModels.silverTop); loadedModels.silverTop.visible = false; 
-    });
-    gltfLoader.load(URLS.silverBottom, (gltf) => { 
-      loadedModels.silverBottom = setupModelPro(gltf.scene, false, 'silver', false); scene.add(loadedModels.silverBottom); loadedModels.silverBottom.visible = false; 
+      loadedModels.goldBottom = setupModelPro(gltf.scene, false); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; 
     });
 
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
@@ -500,25 +416,9 @@
             const topModel = loadedModels[activeTopModel];
             const topLipInner = landmarks[13]; 
             topModel.visible = true;
-            
-            const scaleMultiplier = (activeTopModel === 'silverSingle') ? 1.0 : SCALE_MULTIPLIER_TOP;
-            topModel.scale.set(mouthWidthPixels * scaleMultiplier, mouthWidthPixels * scaleMultiplier, mouthWidthPixels * scaleMultiplier);
+            topModel.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
             topModel.rotation.set(angleX, angleY, -angleZ); 
-
-            let offsetX = 0;
-            let offsetY = 0;
-            if (activeTopSide === 'left') offsetX = -0.25 * mouthWidthPixels;
-            if (activeTopSide === 'right') offsetX = 0.25 * mouthWidthPixels;
-
-            const rotZ = -angleZ;
-            const rotatedOffsetX = offsetX * Math.cos(rotZ) - offsetY * Math.sin(rotZ);
-            const rotatedOffsetY = offsetX * Math.sin(rotZ) + offsetY * Math.cos(rotZ);
-
-            topModel.position.set(
-              (topLipInner.x - 0.5) * width + rotatedOffsetX,
-              -(topLipInner.y - 0.5) * height + rotatedOffsetY,
-              Z_DEPTH
-            );
+            topModel.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
         }
 
         if (activeBottomModel && loadedModels[activeBottomModel]) {
