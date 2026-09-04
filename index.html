@@ -328,14 +328,13 @@
       setTimeout(() => toggleGallery(false), 350);
     }
 
-    // Linki do modeli. Srebro oparto na sprawdzonych geometriach z odpowiednim materiałem.
     const URLS = {
-      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=3",
-      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=3",
-      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=3",
-      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=3",
-      vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=1",
-      vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=1"
+      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=4",
+      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=4",
+      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=4",
+      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=4",
+      vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=2",
+      vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=2"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
@@ -408,7 +407,6 @@
     occluderMesh.position.z = 0; 
     scene.add(occluderMesh);
 
-    // FUNKCJA NAKŁADAJĄCA MATERIAŁY (ZŁOTO / SREBRO)
     function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
       const box = new THREE.Box3().setFromObject(modelScene);
@@ -451,7 +449,6 @@
 
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
     
-    // Ładowanie modeli
     gltfLoader.load(URLS.goldTop, (gltf) => { 
       loadedModels.goldTop = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; 
     });
@@ -472,6 +469,11 @@
     });
 
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
+
+    // Zmienne do wygładzania ruchu (eliminacja drgań / wibracji)
+    let smoothTop = { x: 0, y: 0, z: Z_DEPTH, rx: 0, ry: 0, rz: 0, scale: 0, initialized: false };
+    let smoothBottom = { x: 0, y: 0, z: Z_DEPTH, rx: 0, ry: 0, rz: 0, scale: 0, initialized: false };
+    const LERP_FACTOR = 0.22; // Im mniejsza wartość, tym płynniejszy ruch (mniej drgań)
 
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -514,32 +516,75 @@
             const topLipInner = landmarks[13]; 
             topModel.visible = true;
             
-            // Specjalne zwężenie dla kłów wampira, żeby nie wychodziły poza kąciki ust
-            let baseScale = mouthWidthPixels * SCALE_MULTIPLIER_TOP;
-            if (activeTopModel === 'vampGold' || activeTopModel === 'vampSilver') {
-              let scaleX = baseScale * 0.82; // Zwężenie w osi X (do środka)
-              let scaleY = baseScale;        // Wysokość bez zmian
-              let scaleZ = baseScale;        // Głębia bez zmian
-              topModel.scale.set(scaleX, scaleY, scaleZ);
+            const targetScale = mouthWidthPixels * SCALE_MULTIPLIER_TOP;
+            const targetX = (topLipInner.x - 0.5) * width;
+            const targetY = -(topLipInner.y - 0.5) * height;
+            const targetZ = Z_DEPTH;
+
+            if (!smoothTop.initialized) {
+              smoothTop.x = targetX; smoothTop.y = targetY; smoothTop.z = targetZ;
+              smoothTop.rx = angleX; smoothTop.ry = angleY; smoothTop.rz = -angleZ;
+              smoothTop.scale = targetScale;
+              smoothTop.initialized = true;
             } else {
-              topModel.scale.set(baseScale, baseScale, baseScale);
+              smoothTop.x += (targetX - smoothTop.x) * LERP_FACTOR;
+              smoothTop.y += (targetY - smoothTop.y) * LERP_FACTOR;
+              smoothTop.z += (targetZ - smoothTop.z) * LERP_FACTOR;
+              smoothTop.rx += (angleX - smoothTop.rx) * LERP_FACTOR;
+              smoothTop.ry += (angleY - smoothTop.ry) * LERP_FACTOR;
+              smoothTop.rz += ((-angleZ) - smoothTop.rz) * LERP_FACTOR;
+              smoothTop.scale += (targetScale - smoothTop.scale) * LERP_FACTOR;
             }
 
-            topModel.rotation.set(angleX, angleY, -angleZ); 
-            topModel.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
+            // Mocniejsze zwężenie dla kłów wampira (szerokość zmniejszona do 0.70)
+            if (activeTopModel === 'vampGold' || activeTopModel === 'vampSilver') {
+              topModel.scale.set(smoothTop.scale * 0.70, smoothTop.scale, smoothTop.scale);
+            } else {
+              topModel.scale.set(smoothTop.scale, smoothTop.scale, smoothTop.scale);
+            }
+
+            topModel.rotation.set(smoothTop.rx, smoothTop.ry, smoothTop.rz); 
+            topModel.position.set(smoothTop.x, smoothTop.y, smoothTop.z);
+        } else {
+          smoothTop.initialized = false;
         }
 
         if (activeBottomModel && loadedModels[activeBottomModel]) {
             const bottomModel = loadedModels[activeBottomModel];
             const bottomLipInner = landmarks[14];
             bottomModel.visible = true;
-            bottomModel.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
-            bottomModel.rotation.set(angleX + ROTATION_OFFSET_BOTTOM_X, angleY, -angleZ);
-            bottomModel.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN, Z_DEPTH);
+
+            const targetScaleB = mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM;
+            const targetXB = (bottomLipInner.x - 0.5) * width;
+            const targetYB = -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN;
+            const targetZB = Z_DEPTH;
+
+            if (!smoothBottom.initialized) {
+              smoothBottom.x = targetXB; smoothBottom.y = targetYB; smoothBottom.z = targetZB;
+              smoothBottom.rx = angleX + ROTATION_OFFSET_BOTTOM_X; smoothBottom.ry = angleY; smoothBottom.rz = -angleZ;
+              smoothBottom.scale = targetScaleB;
+              smoothBottom.initialized = true;
+            } else {
+              smoothBottom.x += (targetXB - smoothBottom.x) * LERP_FACTOR;
+              smoothBottom.y += (targetYB - smoothBottom.y) * LERP_FACTOR;
+              smoothBottom.z += (targetZB - smoothBottom.z) * LERP_FACTOR;
+              smoothBottom.rx += ((angleX + ROTATION_OFFSET_BOTTOM_X) - smoothBottom.rx) * LERP_FACTOR;
+              smoothBottom.ry += (angleY - smoothBottom.ry) * LERP_FACTOR;
+              smoothBottom.rz += ((-angleZ) - smoothBottom.rz) * LERP_FACTOR;
+              smoothBottom.scale += (targetScaleB - smoothBottom.scale) * LERP_FACTOR;
+            }
+
+            bottomModel.scale.set(smoothBottom.scale, smoothBottom.scale, smoothBottom.scale);
+            bottomModel.rotation.set(smoothBottom.rx, smoothBottom.ry, smoothBottom.rz);
+            bottomModel.position.set(smoothBottom.x, smoothBottom.y, smoothBottom.z);
+        } else {
+          smoothBottom.initialized = false;
         }
 
       } else {
         if(occluderMesh.geometry) { occluderMesh.geometry.dispose(); occluderMesh.geometry = new THREE.BufferGeometry(); }
+        smoothTop.initialized = false;
+        smoothBottom.initialized = false;
       }
 
       renderer.render(scene, camera);
