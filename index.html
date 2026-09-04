@@ -30,7 +30,7 @@
       z-index: 3; pointer-events: none;
     }
     
-    /* DUŻY EKRAN POWITALNY (INTRO SPLASH - ~4 SEKUNDY) */
+    /* EKRAN POWITALNY (INTRO SPLASH - ~4 SEKUNDY) */
     #introSplash {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: #0b0c10; z-index: 60; display: flex; justify-content: center; align-items: center;
@@ -107,7 +107,7 @@
     .product-thumb {
       width: 55px; height: 55px; background: transparent; border-radius: 10px;
       margin-right: 15px; display: flex; justify-content: center; align-items: center;
-      border: none; overflow: hidden;
+      border: none; overflow: hidden; color: #d4af37; font-size: 18px; font-weight: 700;
     }
     .product-thumb img {
       width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -169,6 +169,7 @@
     </div>
     
     <div class="products-grid">
+      <!-- 1. Gold Full -->
       <div class="product-card" onclick="selectProduct('gold_full', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz_full_gold.png" alt="Gold Full">
@@ -179,6 +180,7 @@
         </div>
       </div>
       
+      <!-- 2. Gold Top -->
       <div class="product-card" onclick="selectProduct('gold_top', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-top.png" alt="Gold Top">
@@ -189,6 +191,7 @@
         </div>
       </div>
 
+      <!-- 3. Gold Bottom -->
       <div class="product-card" onclick="selectProduct('gold_bottom', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-bottom.png" alt="Gold Bottom">
@@ -199,6 +202,7 @@
         </div>
       </div>
 
+      <!-- 4. Silver Open Face Top -->
       <div class="product-card" onclick="selectProduct('silver_open', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grill-openface-top-silver.png" alt="Silver Open Face">
@@ -209,21 +213,45 @@
         </div>
       </div>
 
-      <!-- NOWE OPCJE DLA POJEDYNCZEGO ZĘBA -->
-      <div class="product-card" onclick="selectProduct('silver_single_top_left', this)">
-        <div class="product-thumb">
-          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grill-openface-top-silver.png" alt="Single Top Left">
+      <!-- 5. Silver Full Set (Nowe) -->
+      <div class="product-card" onclick="selectProduct('silver_full', this)">
+        <div class="product-thumb">✨</div>
+        <div class="product-info">
+          <div class="product-name">Silver Full Set</div>
+          <div class="product-desc">Srebro • Komplet (Góra + Dół)</div>
         </div>
+      </div>
+
+      <!-- 6. Silver Top (Nowe) -->
+      <div class="product-card" onclick="selectProduct('silver_top', this)">
+        <div class="product-thumb">✨</div>
+        <div class="product-info">
+          <div class="product-name">Silver Top</div>
+          <div class="product-desc">Srebro • Tylko Góra</div>
+        </div>
+      </div>
+
+      <!-- 7. Silver Bottom (Nowe) -->
+      <div class="product-card" onclick="selectProduct('silver_bottom', this)">
+        <div class="product-thumb">✨</div>
+        <div class="product-info">
+          <div class="product-name">Silver Bottom</div>
+          <div class="product-desc">Srebro • Tylko Dół</div>
+        </div>
+      </div>
+
+      <!-- 8. Silver Single Top Left -->
+      <div class="product-card" onclick="selectProduct('silver_single_top_left', this)">
+        <div class="product-thumb">⚡</div>
         <div class="product-info">
           <div class="product-name">Silver Single • Góra (Lewy)</div>
           <div class="product-desc">Srebro • Pojedynczy ząb</div>
         </div>
       </div>
 
+      <!-- 9. Silver Single Top Right -->
       <div class="product-card" onclick="selectProduct('silver_single_top_right', this)">
-        <div class="product-thumb">
-          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grill-openface-top-silver.png" alt="Single Top Right">
-        </div>
+        <div class="product-thumb">⚡</div>
         <div class="product-info">
           <div class="product-name">Silver Single • Góra (Prawy)</div>
           <div class="product-desc">Srebro • Pojedynczy ząb</div>
@@ -244,7 +272,6 @@
       }, 4000);
     });
 
-    // Stan startowy: nic nie wybrane (na pusto)
     let activeTopModel = null;    
     let activeBottomModel = null;
     let activeTopSide = 'center'; // 'center', 'left', 'right'
@@ -259,7 +286,6 @@
       element.classList.add('selected', 'animate-click');
       setTimeout(() => element.classList.remove('animate-click'), 300);
 
-      // Reset stanów
       activeTopModel = null;
       activeBottomModel = null;
       activeTopSide = 'center';
@@ -273,6 +299,13 @@
         activeBottomModel = 'goldBottom';
       } else if (productId === 'silver_open') {
         activeTopModel = 'silverTopOpen';
+      } else if (productId === 'silver_full') {
+        activeTopModel = 'silverTop';
+        activeBottomModel = 'silverBottom';
+      } else if (productId === 'silver_top') {
+        activeTopModel = 'silverTop';
+      } else if (productId === 'silver_bottom') {
+        activeBottomModel = 'silverBottom';
       } else if (productId === 'silver_single_top_left') {
         activeTopModel = 'silverSingle';
         activeTopSide = 'left';
@@ -288,7 +321,9 @@
       goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb",
       goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb",
       silverTopOpen: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grill-openface-top-silver.glb",
-      silverSingle: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-openface-single.glb"
+      silverSingle: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-openface-single.glb",
+      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top-silver.glb",
+      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom-silver.glb"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
@@ -367,7 +402,6 @@
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
 
-      // Pojedynczy ząb wymaga mniejszej bazy skali
       const baseScale = isSingle ? 0.16 : 1.0;
       const scale = baseScale / size.x;
       modelScene.scale.set(scale, scale, scale);
@@ -398,7 +432,9 @@
       goldTop: null,
       goldBottom: null,
       silverTopOpen: null,
-      silverSingle: null
+      silverSingle: null,
+      silverTop: null,
+      silverBottom: null
     };
 
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
@@ -414,6 +450,12 @@
     });
     gltfLoader.load(URLS.silverSingle, (gltf) => { 
       loadedModels.silverSingle = setupModelPro(gltf.scene, true, 'silver', true); scene.add(loadedModels.silverSingle); loadedModels.silverSingle.visible = false; 
+    });
+    gltfLoader.load(URLS.silverTop, (gltf) => { 
+      loadedModels.silverTop = setupModelPro(gltf.scene, true, 'silver', false); scene.add(loadedModels.silverTop); loadedModels.silverTop.visible = false; 
+    });
+    gltfLoader.load(URLS.silverBottom, (gltf) => { 
+      loadedModels.silverBottom = setupModelPro(gltf.scene, false, 'silver', false); scene.add(loadedModels.silverBottom); loadedModels.silverBottom.visible = false; 
     });
 
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
@@ -463,7 +505,6 @@
             topModel.scale.set(mouthWidthPixels * scaleMultiplier, mouthWidthPixels * scaleMultiplier, mouthWidthPixels * scaleMultiplier);
             topModel.rotation.set(angleX, angleY, -angleZ); 
 
-            // Offset dla pojedynczego zęba uwzględniający nachylenie ust (angleZ)
             let offsetX = 0;
             let offsetY = 0;
             if (activeTopSide === 'left') offsetX = -0.25 * mouthWidthPixels;
