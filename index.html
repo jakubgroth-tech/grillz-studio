@@ -8,9 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   
+  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
+  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -21,7 +23,7 @@
     .input_video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transform: scaleX(-1); }
     .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; transform: scaleX(-1); pointer-events: none; }
     
-    /* WINIETA DLA KLIMATU PREMIUM */
+    /* WINIETA KINOWA */
     .vignette {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.8) 100%);
@@ -100,7 +102,6 @@
     .product-name { color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
     .product-desc { color: #888; font-size: 10px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* IDEALNIE WYŚRODKOWANY EKRAN ŁADOWANIA */
     #loadingScreen { 
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
       background: #0b0c10; z-index: 50; display: flex; flex-direction: column; 
@@ -189,9 +190,6 @@
   </div>
 
   <script>
-    // ==========================================
-    // 0. LOGIKA GALERII I STANÓW
-    // ==========================================
     let activeTopModel = 'goldTop';    
     let activeBottomModel = 'goldBottom';
 
@@ -222,18 +220,12 @@
       setTimeout(() => toggleGallery(false), 350);
     }
 
-    // ==========================================
-    // 1. BAZA MODELI GITHUB (RAW)
-    // ==========================================
     const URLS = {
       goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb",
       goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb",
       silverTopOpen: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grill-openface-top-silver.glb"
     };
 
-    // ==========================================
-    // 2. KONFIGURACJA POZYCJONOWANIA
-    // ==========================================
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
 
@@ -250,13 +242,10 @@
       setTimeout(() => { loadingScreen.style.opacity = '0'; setTimeout(() => loadingScreen.style.display = 'none', 500); }, 800);
     };
 
-    // ==========================================
-    // 3. SILNIK I OŚWIETLENIE PREMIUM (BŁYSK I ODBICIA)
-    // ==========================================
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.6; // Zwiększona ekspozycja dla efektu lśnienia biżuterii
+    renderer.toneMappingExposure = 1.6; 
 
     const scene = new THREE.Scene();
 
@@ -276,7 +265,6 @@
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
     
-    // Dodatkowe światło kierunkowe tworzące refleksy i błysk na biżuterii
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
     directionalLight.position.set(0, 10, 15);
     scene.add(directionalLight);
@@ -287,7 +275,7 @@
     scene.add(occluderMesh);
 
     // ==========================================
-    // 4. GENERATOR MODELI (MATERIAŁY PREMIUM)
+    // POPRAWIONE MATERIAŁY PREMIUM (LUSTRZANE SREBRO I GŁĘBOKIE ZŁOTO)
     // ==========================================
     function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
@@ -305,15 +293,18 @@
       modelScene.traverse((child) => {
         if (child.isMesh) {
           if (materialType === 'gold') {
-            child.material.color.setHex(0xe6c55c); // Głęboki, bogaty odcień złota
+            child.material.color.setHex(0xe6c55c); 
             child.material.metalness = 1.0; 
-            child.material.roughness = 0.08; // Wysoki połysk
-            child.material.envMapIntensity = 3.0; // Silne odbicia otoczenia
+            child.material.roughness = 0.08; 
+            child.material.envMapIntensity = 3.0; 
           } else if (materialType === 'silver') {
-            child.material.color.setHex(0xffffff); // Czyste, jasne srebro
+            // Chłodny, stalowy odcień bazowy zapobiegający "białemu matowi"
+            child.material.color.setHex(0xd0d5dd); 
             child.material.metalness = 1.0; 
-            child.material.roughness = 0.04; // Lustrzany połysk
-            child.material.envMapIntensity = 3.5;
+            // Ekstremalnie niski roughness zamienia srebro w idealne lustro (chrom)
+            child.material.roughness = 0.02; 
+            // Bardzo wysoka intensywność odbić otoczenia dla mocnego błysku
+            child.material.envMapIntensity = 4.5;
           }
         }
       });
@@ -338,9 +329,6 @@
       loadedModels.silverTopOpen = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.silverTopOpen); loadedModels.silverTopOpen.visible = false; 
     });
 
-    // ==========================================
-    // 5. ANATOMICZNE ŚLEDZENIE
-    // ==========================================
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
     function onResults(results) {
@@ -356,7 +344,6 @@
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
 
-        // Maska Otworu Ust
         const maskShape = new THREE.Shape();
         maskShape.moveTo(-width, -height); maskShape.lineTo(width, -height); maskShape.lineTo(width, height); maskShape.lineTo(-width, height); maskShape.lineTo(-width, -height);
         const mouthHole = new THREE.Path();
@@ -380,7 +367,6 @@
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // RENDER GÓRY
         if (activeTopModel && loadedModels[activeTopModel]) {
             const topModel = loadedModels[activeTopModel];
             const topLipInner = landmarks[13]; 
@@ -390,7 +376,6 @@
             topModel.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
         }
 
-        // RENDER DOŁU
         if (activeBottomModel && loadedModels[activeBottomModel]) {
             const bottomModel = loadedModels[activeBottomModel];
             const bottomLipInner = landmarks[14];
