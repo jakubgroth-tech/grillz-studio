@@ -328,12 +328,12 @@
       setTimeout(() => toggleGallery(false), 350);
     }
 
-    // Linki do wszystkich modeli z cache-bustingiem
+    // Linki do modeli. Srebro oparto na sprawdzonych geometriach z odpowiednim materiałem.
     const URLS = {
-      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=2",
-      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=2",
-      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top-silver.glb?v=2",
-      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-botom-silver.glb?v=2",
+      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=3",
+      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=3",
+      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=3",
+      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=3",
       vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=1",
       vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=1"
     };
@@ -513,7 +513,18 @@
             const topModel = loadedModels[activeTopModel];
             const topLipInner = landmarks[13]; 
             topModel.visible = true;
-            topModel.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
+            
+            // Specjalne zwężenie dla kłów wampira, żeby nie wychodziły poza kąciki ust
+            let baseScale = mouthWidthPixels * SCALE_MULTIPLIER_TOP;
+            if (activeTopModel === 'vampGold' || activeTopModel === 'vampSilver') {
+              let scaleX = baseScale * 0.82; // Zwężenie w osi X (do środka)
+              let scaleY = baseScale;        // Wysokość bez zmian
+              let scaleZ = baseScale;        // Głębia bez zmian
+              topModel.scale.set(scaleX, scaleY, scaleZ);
+            } else {
+              topModel.scale.set(baseScale, baseScale, baseScale);
+            }
+
             topModel.rotation.set(angleX, angleY, -angleZ); 
             topModel.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
         }
