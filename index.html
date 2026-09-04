@@ -17,17 +17,41 @@
 
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #0b0c10; overflow: hidden; font-family: 'Syne', sans-serif; }
+    
     .input_video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transform: scaleX(-1); }
     .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; transform: scaleX(-1); pointer-events: none; }
     
-    /* INTERFEJS */
-    .ui-main { position: absolute; bottom: 90px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; pointer-events: auto; }
-    .logo { font-size: 24px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 4px 12px rgba(0,0,0,0.8); margin-bottom: 2px; text-align: center; }
-    .subtext { font-size: 9px; color: #f0f2f5; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; opacity: 0.7; text-align: center; }
+    /* WINIETA DLA KLIMATU PREMIUM */
+    .vignette {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.8) 100%);
+      z-index: 3; pointer-events: none;
+    }
     
+    /* LOGO I NAGŁÓWEK NA GÓRZE */
+    .ui-top { 
+      position: absolute; top: 25px; left: 0; width: 100%; 
+      display: flex; flex-direction: column; align-items: center; z-index: 10; 
+      pointer-events: none; 
+    }
+    .logo-img { 
+      height: 32px; object-fit: contain; 
+      filter: drop-shadow(0 2px 10px rgba(0,0,0,0.9)); 
+    }
+    .subtext { 
+      font-size: 8px; color: #d4af37; text-transform: uppercase; 
+      letter-spacing: 3px; margin-top: 6px; opacity: 0.9; 
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9); font-weight: 700;
+    }
+
+    /* PRZYCISK NA DOLE */
+    .ui-bottom {
+      position: absolute; bottom: 40px; left: 0; width: 100%;
+      display: flex; justify-content: center; z-index: 10; pointer-events: auto;
+    }
     .btn-browse {
       background: rgba(212, 175, 55, 0.95); color: #0b0c10; border: none;
-      padding: 14px 36px; border-radius: 30px; font-family: 'Syne', sans-serif;
+      padding: 14px 38px; border-radius: 30px; font-family: 'Syne', sans-serif;
       font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
       cursor: pointer; box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
       transition: all 0.3s ease;
@@ -57,27 +81,37 @@
     .product-card {
       display: flex; align-items: center; background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;
-      padding: 12px 16px; cursor: pointer; transition: all 0.2s ease;
+      padding: 12px 16px; cursor: pointer; transition: all 0.3s ease;
     }
-    .product-card.selected { border-color: #d4af37; background: rgba(212, 175, 55, 0.12); }
+    .product-card.selected { border-color: #d4af37; background: rgba(212, 175, 55, 0.12); transform: scale(1.02); }
     .product-card.animate-click { animation: clickBounce 0.3s ease; }
     
     .product-thumb {
-      width: 50px; height: 50px; background: rgba(0,0,0,0.6); border-radius: 10px;
+      width: 55px; height: 55px; background: rgba(0,0,0,0.6); border-radius: 10px;
       margin-right: 15px; display: flex; justify-content: center; align-items: center;
       border: 1px solid rgba(212, 175, 55, 0.2); overflow: hidden;
     }
     .product-thumb img {
       width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s ease;
     }
-    .product-card.selected .product-thumb img { transform: scale(1.15); }
+    .product-card.selected .product-thumb img { transform: scale(1.2); }
 
     .product-info { display: flex; flex-direction: column; }
     .product-name { color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
     .product-desc { color: #888; font-size: 10px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
 
-    #loadingScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0c10; z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; text-align: center; padding: 20px; }
-    .spinner { width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    /* IDEALNIE WYŚRODKOWANY EKRAN ŁADOWANIA */
+    #loadingScreen { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+      background: #0b0c10; z-index: 50; display: flex; flex-direction: column; 
+      justify-content: center; align-items: center; text-align: center; 
+      transition: opacity 0.5s ease; padding: 20px; box-sizing: border-box; 
+    }
+    .spinner { 
+      width: 44px; height: 44px; border: 3px solid rgba(212, 175, 55, 0.2); 
+      border-top-color: #d4af37; border-radius: 50%; 
+      animation: spin 1s linear infinite; margin-bottom: 20px; 
+    }
     
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes clickBounce { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
@@ -89,15 +123,19 @@
 
   <div id="loadingScreen">
     <div class="spinner"></div>
-    <div class="loading-text">Wczytywanie Kolekcji...</div>
+    <div class="loading-text">WCZYTYWANIE KOLEKCJI...</div>
   </div>
 
   <video class="input_video" autoplay playsinline muted></video>
+  <div class="vignette"></div>
   <canvas class="output_canvas"></canvas>
 
-  <div class="ui-main">
-    <div class="logo">Grillz Studio</div>
+  <div class="ui-top">
+    <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/logo.png" alt="Grillz Studio" class="logo-img">
     <div class="subtext">Live AR Fitting Spot</div>
+  </div>
+
+  <div class="ui-bottom">
     <button class="btn-browse" onclick="toggleGallery(true)">Przeglądaj Kolekcję</button>
   </div>
 
@@ -114,7 +152,7 @@
         </div>
         <div class="product-info">
           <div class="product-name">Gold Full Set</div>
-          <div class="product-desc">Komplet</div>
+          <div class="product-desc">Komplet (Góra + Dół)</div>
         </div>
       </div>
       
@@ -124,7 +162,7 @@
         </div>
         <div class="product-info">
           <div class="product-name">Gold Top</div>
-          <div class="product-desc">Góra</div>
+          <div class="product-desc">Tylko Góra</div>
         </div>
       </div>
 
@@ -134,7 +172,7 @@
         </div>
         <div class="product-info">
           <div class="product-name">Gold Bottom</div>
-          <div class="product-desc">Dół</div>
+          <div class="product-desc">Tylko Dół</div>
         </div>
       </div>
 
@@ -144,7 +182,7 @@
         </div>
         <div class="product-info">
           <div class="product-name">Silver Open Face</div>
-          <div class="product-desc">Srebro • Góra</div>
+          <div class="product-desc">Srebro • Górny Łuk</div>
         </div>
       </div>
     </div>
@@ -194,7 +232,7 @@
     };
 
     // ==========================================
-    // 2. KONFIGURACJA POZYCJONOWANIA (Sprawdzona, stabilna baza)
+    // 2. KONFIGURACJA POZYCJONOWANIA
     // ==========================================
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
@@ -213,12 +251,12 @@
     };
 
     // ==========================================
-    // 3. SILNIK I OŚWIETLENIE
+    // 3. SILNIK I OŚWIETLENIE PREMIUM (BŁYSK I ODBICIA)
     // ==========================================
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1; 
+    renderer.toneMappingExposure = 1.6; // Zwiększona ekspozycja dla efektu lśnienia biżuterii
 
     const scene = new THREE.Scene();
 
@@ -235,10 +273,12 @@
         texture.dispose(); pmremGenerator.dispose();
       });
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(0, 5, 10);
+    
+    // Dodatkowe światło kierunkowe tworzące refleksy i błysk na biżuterii
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    directionalLight.position.set(0, 10, 15);
     scene.add(directionalLight);
 
     const occluderMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
@@ -247,7 +287,7 @@
     scene.add(occluderMesh);
 
     // ==========================================
-    // 4. GENERATOR MODELI
+    // 4. GENERATOR MODELI (MATERIAŁY PREMIUM)
     // ==========================================
     function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
@@ -265,15 +305,16 @@
       modelScene.traverse((child) => {
         if (child.isMesh) {
           if (materialType === 'gold') {
-            child.material.color.setHex(0xe5c573); 
+            child.material.color.setHex(0xe6c55c); // Głęboki, bogaty odcień złota
             child.material.metalness = 1.0; 
-            child.material.roughness = 0.12; 
+            child.material.roughness = 0.08; // Wysoki połysk
+            child.material.envMapIntensity = 3.0; // Silne odbicia otoczenia
           } else if (materialType === 'silver') {
-            child.material.color.setHex(0xf0f2f5); 
+            child.material.color.setHex(0xffffff); // Czyste, jasne srebro
             child.material.metalness = 1.0; 
-            child.material.roughness = 0.06; 
+            child.material.roughness = 0.04; // Lustrzany połysk
+            child.material.envMapIntensity = 3.5;
           }
-          child.material.envMapIntensity = 1.6; 
         }
       });
       return wrapper;
@@ -298,7 +339,7 @@
     });
 
     // ==========================================
-    // 5. ANATOMICZNE ŚLEDZENIE (Poprzednia, sprawdzona baza)
+    // 5. ANATOMICZNE ŚLEDZENIE
     // ==========================================
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
@@ -336,8 +377,6 @@
 
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2.5);
-        
-        // Powrót do stabilnej rotacji X opartej o całą twarz (topFace / bottomFace), która działała najlepiej
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
