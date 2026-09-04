@@ -30,15 +30,16 @@
       z-index: 3; pointer-events: none;
     }
     
-    /* LOGO I NAGŁÓWEK NA GÓRZE */
+    /* DUŻE LOGO I NAGŁÓWEK NA GÓRZE */
     .ui-top { 
       position: absolute; top: 25px; left: 0; width: 100%; 
       display: flex; flex-direction: column; align-items: center; z-index: 10; 
       pointer-events: none; 
     }
     .logo-img { 
-      height: 32px; object-fit: contain; 
-      filter: drop-shadow(0 2px 10px rgba(0,0,0,0.9)); 
+      height: 55px; /* Znacznie większe logo */
+      object-fit: contain; 
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.9)); 
     }
     .subtext { 
       font-size: 8px; color: #d4af37; text-transform: uppercase; 
@@ -53,8 +54,8 @@
     }
     .btn-browse {
       background: rgba(212, 175, 55, 0.95); color: #0b0c10; border: none;
-      padding: 14px 38px; border-radius: 30px; font-family: 'Syne', sans-serif;
-      font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
+      padding: 15px 40px; border-radius: 30px; font-family: 'Syne', sans-serif;
+      font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
       cursor: pointer; box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
       transition: all 0.3s ease;
     }
@@ -102,6 +103,7 @@
     .product-name { color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
     .product-desc { color: #888; font-size: 10px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
 
+    /* IDEALNIE WYŚRODKOWANY EKRAN ŁADOWANIA */
     #loadingScreen { 
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
       background: #0b0c10; z-index: 50; display: flex; flex-direction: column; 
@@ -137,7 +139,7 @@
   </div>
 
   <div class="ui-bottom">
-    <button class="btn-browse" onclick="toggleGallery(true)">Przeglądaj Kolekcję</button>
+    <button class="btn-browse" onclick="toggleGallery(true)">Przymierz Grillza</button>
   </div>
 
   <div id="galleryModal">
@@ -147,7 +149,7 @@
     </div>
     
     <div class="products-grid">
-      <div class="product-card selected" onclick="selectProduct('gold_full', this)">
+      <div class="product-card" onclick="selectProduct('gold_full', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz_full_gold.png" alt="Gold Full">
         </div>
@@ -190,8 +192,11 @@
   </div>
 
   <script>
-    let activeTopModel = 'goldTop';    
-    let activeBottomModel = 'goldBottom';
+    // ==========================================
+    // 0. LOGIKA STANÓW (START NA PUSTO)
+    // ==========================================
+    let activeTopModel = null;    
+    let activeBottomModel = null;
 
     function toggleGallery(show) {
       const modal = document.getElementById('galleryModal');
@@ -274,9 +279,6 @@
     occluderMesh.position.z = 0; 
     scene.add(occluderMesh);
 
-    // ==========================================
-    // POPRAWIONE MATERIAŁY PREMIUM (LUSTRZANE SREBRO I GŁĘBOKIE ZŁOTO)
-    // ==========================================
     function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
       const box = new THREE.Box3().setFromObject(modelScene);
@@ -298,12 +300,9 @@
             child.material.roughness = 0.08; 
             child.material.envMapIntensity = 3.0; 
           } else if (materialType === 'silver') {
-            // Chłodny, stalowy odcień bazowy zapobiegający "białemu matowi"
             child.material.color.setHex(0xd0d5dd); 
             child.material.metalness = 1.0; 
-            // Ekstremalnie niski roughness zamienia srebro w idealne lustro (chrom)
             child.material.roughness = 0.02; 
-            // Bardzo wysoka intensywność odbić otoczenia dla mocnego błysku
             child.material.envMapIntensity = 4.5;
           }
         }
