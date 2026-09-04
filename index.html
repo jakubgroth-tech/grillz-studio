@@ -58,8 +58,8 @@
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 0.95; 
 
-    // OPUST DOLNEGO MODELU (W PIKSELACH). Zwiększ, jeśli nadal jest za wysoko!
-    const MOVE_BOTTOM_DOWN = 45.0; 
+    // OBNIŻENIE DOLNEJ SZCZĘKI (Zmień tę wartość, jeśli dolny model będzie za wysoko/za nisko)
+    const MOVE_BOTTOM_DOWN = 20.0; 
 
     const Z_DEPTH = -50; 
 
@@ -203,20 +203,19 @@
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // ZĘBY GÓRNE (NIC NIE ZMIENIAMY!)
+        // ZĘBY GÓRNE (IDEALNE - NIETKNĘTE)
         const topLipInner = landmarks[13]; 
         topWrapper.visible = true;
         topWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
         topWrapper.rotation.set(angleX, angleY, -angleZ); 
         topWrapper.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
 
-        // ZĘBY DOLNE (DODANE OBNIŻENIE W OSI Y)
+        // ZĘBY DOLNE (NAPRAWIONE: używamy DODAWANIA, żeby zjechał na dół)
         const bottomLipInner = landmarks[14];
         bottomWrapper.visible = true;
         bottomWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
         bottomWrapper.rotation.set(angleX, angleY, -angleZ);
-        // TUTAJ WCHODZI NASZ SUWAK: - MOVE_BOTTOM_DOWN
-        bottomWrapper.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN, Z_DEPTH);
+        bottomWrapper.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height + MOVE_BOTTOM_DOWN, Z_DEPTH);
 
       } else {
         if(topWrapper) topWrapper.visible = false;
