@@ -53,14 +53,16 @@
     const URL_BOTTOM = "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb";
 
     // ==========================================
-    // 2. KONFIGURACJA (SKALA I POZYCJA)
+    // 2. NOWY SYSTEM SKALOWANIA 
+    // 1.0 oznacza, że grillz idealnie przylega od lewego do prawego kącika ust.
     // ==========================================
     const SCALE_MULTIPLIER_TOP = 1.0; 
-    const SCALE_MULTIPLIER_BOTTOM = 0.95; 
+    const SCALE_MULTIPLIER_BOTTOM = 0.95; // Dół zazwyczaj jest minimalnie węższy od góry
 
-    // OBNIŻENIE DOLNEJ SZCZĘKI (Zmień tę wartość, jeśli dolny model będzie za wysoko/za nisko)
-    const MOVE_BOTTOM_DOWN = 20.0; 
+    // Delikatne obniżenie dołu (zwiększaj lub zmniejszaj tę wartość w pikselach)
+    const MOVE_BOTTOM_DOWN = 8.0;
 
+    // Z-Depth - Złoto fizycznie wepchnięte głęboko do tyłu (-50), za niewidzialną maskę
     const Z_DEPTH = -50; 
 
     const videoElement = document.querySelector('.input_video');
@@ -106,11 +108,12 @@
     // ==========================================
     const occluderMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
     let occluderMesh = new THREE.Mesh(new THREE.BufferGeometry(), occluderMaterial);
+    // Tarcza stoi blisko kamery, ukrywając wszystko za sobą (oprócz miejsca, gdzie wytniemy dziurę)
     occluderMesh.position.z = 0; 
     scene.add(occluderMesh);
 
     // ==========================================
-    // 5. AUTO-NORMALIZACJA MODELI
+    // 5. AUTO-NORMALIZACJA MODELI (MAGIA)
     // ==========================================
     function setupModelPro(modelScene, isTop) {
       const wrapper = new THREE.Group();
@@ -119,17 +122,22 @@
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
 
+      // Skaluje model do szerokości równej 1 jednostce (ułatwia to rozciąganie do kącików ust)
       const scale = 1.0 / size.x;
       modelScene.scale.set(scale, scale, scale);
 
+      // Pivot (punkt zakotwiczenia)
+      // Górne zęby kotwiczymy do GÓRNEJ krawędzi (zaczynają się pod wargą i idą w dół)
+      // Dolne zęby kotwiczymy do DOLNEJ krawędzi (zaczynają się nad wargą i idą w górę)
       const pivotY = isTop ? box.max.y : box.min.y;
 
       modelScene.position.x = -center.x * scale;
       modelScene.position.y = -pivotY * scale;
-      modelScene.position.z = -box.max.z * scale; 
+      modelScene.position.z = -box.max.z * scale; // Przód równo z osią
 
       wrapper.add(modelScene);
 
+      // Nadanie luksusowego złota
       modelScene.traverse((child) => {
         if (child.isMesh) {
           child.material.color.setHex(0xe5c573); 
@@ -159,6 +167,7 @@
     // ==========================================
     // 6. ANATOMICZNE ŚLEDZENIE 
     // ==========================================
+    // Punkty wewnętrznej linii warg (tworzą idealny otwór w niewidzialnej tarczy)
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
     function onResults(results) {
@@ -172,8 +181,11 @@
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && topWrapper && bottomWrapper) {
         const landmarks = results.multiFaceLandmarks[0];
 
-        // Maska Otworu Ust
+        // ------------------------------------------------
+        // A. AKTUALIZACJA MASKI (Wycinanie otworu na usta)
+        // ------------------------------------------------
         const maskShape = new THREE.Shape();
+        // Tworzymy gigantyczną tarczę przykrywającą cały ekran
         maskShape.moveTo(-width, -height);
         maskShape.lineTo(width, -height);
         maskShape.lineTo(width, height);
@@ -187,15 +199,19 @@
             const pt = landmarks[MOUTH_HOLE_INDICES[i]];
             mouthHole.lineTo((pt.x - 0.5) * width, -(pt.y - 0.5) * height);
         }
-        maskShape.holes.push(mouthHole); 
+        maskShape.holes.push(mouthHole); // Wycina dziurę w tarczy
 
         const newGeo = new THREE.ShapeGeometry(maskShape);
         if(occluderMesh.geometry) occluderMesh.geometry.dispose();
         occluderMesh.geometry = newGeo;
 
-        // Skala i kąty
+        // ------------------------------------------------
+        // B. DOPASOWANIE ZĘBÓW (Skala, Kąt, Pozycja)
+        // ------------------------------------------------
         const leftCorner = landmarks[61];
         const rightCorner = landmarks[291];
+        
+        // Obliczamy szerokość ust - nasze znormalizowane zęby idealnie się w to wpasują!
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
 
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
@@ -203,19 +219,19 @@
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
-        // ZĘBY GÓRNE (IDEALNE - NIETKNĘTE)
+        // Zęby Górne (Kotwica: środek dolnej linii górnej wargi - pkt 13)
         const topLipInner = landmarks[13]; 
         topWrapper.visible = true;
         topWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP, mouthWidthPixels * SCALE_MULTIPLIER_TOP);
         topWrapper.rotation.set(angleX, angleY, -angleZ); 
         topWrapper.position.set((topLipInner.x - 0.5) * width, -(topLipInner.y - 0.5) * height, Z_DEPTH);
 
-        // ZĘBY DOLNE (NAPRAWIONE: używamy DODAWANIA, żeby zjechał na dół)
+        // Zęby Dolne (Kotwica: środek górnej linii dolnej wargi - pkt 14)
         const bottomLipInner = landmarks[14];
         bottomWrapper.visible = true;
         bottomWrapper.scale.set(mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM, mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM);
         bottomWrapper.rotation.set(angleX, angleY, -angleZ);
-        bottomWrapper.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height + MOVE_BOTTOM_DOWN, Z_DEPTH);
+        bottomWrapper.position.set((bottomLipInner.x - 0.5) * width, -(bottomLipInner.y - 0.5) * height, Z_DEPTH);
 
       } else {
         if(topWrapper) topWrapper.visible = false;
