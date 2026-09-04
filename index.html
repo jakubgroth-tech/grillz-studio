@@ -179,7 +179,7 @@
     <button class="btn-browse" onclick="toggleGallery(true)">PRZYMIARKA</button>
   </div>
 
-  <!-- CZYSTA GALERIA - ZŁOTO I SREBRO -->
+  <!-- GALERIA - 3 ZŁOTE + 3 SREBRNE -->
   <div id="galleryModal">
     <div class="gallery-header">
       <div class="gallery-title">Wybierz Model</div>
@@ -256,7 +256,7 @@
   </div>
 
   <script>
-    // Zniknięcie tła idealnie podłączone pod koniec animacji
+    // Płynne zamknięcie ekranu powitalnego
     window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('introSplash');
@@ -302,13 +302,12 @@
       setTimeout(() => toggleGallery(false), 350);
     }
 
-    // WAŻNE: Dodane "?v=1" by zresetować pamięć cache w przeglądarce i wymusić pobranie świeżych plików!
-    // Poprawiona literówka z "botom" na "bottom"
+    // Użycie sprawdzonych plików geometrycznych dla idealnego dopasowania, z osobnym cache-bustingiem
     const URLS = {
-      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=1",
-      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=1",
-      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top-silver.glb?v=1",
-      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom-silver.glb?v=1"
+      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=2",
+      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=2",
+      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=2",
+      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=2"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
@@ -381,7 +380,7 @@
     occluderMesh.position.z = 0; 
     scene.add(occluderMesh);
 
-    // FUNKCJA NAKŁADAJĄCA MATERIAŁY ORAZ DOKŁADNIE TEN SAM WZÓR POZYCJONOWANIA
+    // FUNKCJA NAKŁADAJĄCA ODPOWIEDNI MATERIAŁ (ZŁOTO / SREBRO)
     function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
       const box = new THREE.Box3().setFromObject(modelScene);
