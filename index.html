@@ -179,7 +179,7 @@
     <button class="btn-browse" onclick="toggleGallery(true)">PRZYMIARKA</button>
   </div>
 
-  <!-- GALERIA - 3 ZŁOTE + 3 SREBRNE -->
+  <!-- GALERIA - ZŁOTO, SREBRO ORAZ KŁY WAMPIRA -->
   <div id="galleryModal">
     <div class="gallery-header">
       <div class="gallery-title">Wybierz Model</div>
@@ -252,11 +252,33 @@
           <div class="product-desc">Srebro • Tylko Dół</div>
         </div>
       </div>
+
+      <!-- 7. Vampire Gold -->
+      <div class="product-card" onclick="selectProduct('vamp_gold', this)">
+        <div class="product-thumb">
+          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-gold.png" alt="Vampire Gold">
+        </div>
+        <div class="product-info">
+          <div class="product-name">Vampire Gold</div>
+          <div class="product-desc">Złoto • Kły wampira</div>
+        </div>
+      </div>
+
+      <!-- 8. Vampire Silver -->
+      <div class="product-card" onclick="selectProduct('vamp_silver', this)">
+        <div class="product-thumb">
+          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-silver.png" alt="Vampire Silver">
+        </div>
+        <div class="product-info">
+          <div class="product-name">Vampire Silver</div>
+          <div class="product-desc">Srebro • Kły wampira</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    // Płynne zamknięcie ekranu powitalnego
+    // Zniknięcie tła intro
     window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('introSplash');
@@ -297,17 +319,23 @@
         activeTopModel = 'silverTop';
       } else if (productId === 'silver_bottom') {
         activeBottomModel = 'silverBottom';
+      } else if (productId === 'vamp_gold') {
+        activeTopModel = 'vampGold';
+      } else if (productId === 'vamp_silver') {
+        activeTopModel = 'vampSilver';
       }
       
       setTimeout(() => toggleGallery(false), 350);
     }
 
-    // Użycie sprawdzonych plików geometrycznych dla idealnego dopasowania, z osobnym cache-bustingiem
+    // Linki do wszystkich modeli z cache-bustingiem
     const URLS = {
       goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=2",
       goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=2",
-      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=2",
-      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=2"
+      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top-silver.glb?v=2",
+      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-botom-silver.glb?v=2",
+      vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=1",
+      vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=1"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
@@ -380,7 +408,7 @@
     occluderMesh.position.z = 0; 
     scene.add(occluderMesh);
 
-    // FUNKCJA NAKŁADAJĄCA ODPOWIEDNI MATERIAŁ (ZŁOTO / SREBRO)
+    // FUNKCJA NAKŁADAJĄCA MATERIAŁY (ZŁOTO / SREBRO)
     function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
       const box = new THREE.Box3().setFromObject(modelScene);
@@ -416,23 +444,31 @@
       goldTop: null,
       goldBottom: null,
       silverTop: null,
-      silverBottom: null
+      silverBottom: null,
+      vampGold: null,
+      vampSilver: null
     };
 
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
     
+    // Ładowanie modeli
     gltfLoader.load(URLS.goldTop, (gltf) => { 
       loadedModels.goldTop = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; 
     });
     gltfLoader.load(URLS.goldBottom, (gltf) => { 
       loadedModels.goldBottom = setupModelPro(gltf.scene, false, 'gold'); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; 
     });
-    
     gltfLoader.load(URLS.silverTop, (gltf) => { 
       loadedModels.silverTop = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.silverTop); loadedModels.silverTop.visible = false; 
     });
     gltfLoader.load(URLS.silverBottom, (gltf) => { 
       loadedModels.silverBottom = setupModelPro(gltf.scene, false, 'silver'); scene.add(loadedModels.silverBottom); loadedModels.silverBottom.visible = false; 
+    });
+    gltfLoader.load(URLS.vampGold, (gltf) => { 
+      loadedModels.vampGold = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.vampGold); loadedModels.vampGold.visible = false; 
+    });
+    gltfLoader.load(URLS.vampSilver, (gltf) => { 
+      loadedModels.vampSilver = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.vampSilver); loadedModels.vampSilver.visible = false; 
     });
 
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
