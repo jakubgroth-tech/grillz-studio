@@ -8,11 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   
-  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -63,9 +61,9 @@
       text-shadow: 0 2px 6px rgba(0,0,0,0.9); font-weight: 700;
     }
 
-    /* PRZYCISKI NA DOLE (APARAT I PRZYMIARKA) */
+    /* PRZYCISKI NA DOLE (PODNIESIONE PONAD NETLIFY) */
     .ui-bottom {
-      position: absolute; bottom: 40px; left: 0; width: 100%;
+      position: absolute; bottom: 80px; left: 0; width: 100%;
       display: flex; justify-content: center; align-items: center; gap: 16px;
       z-index: 10; pointer-events: auto;
     }
@@ -146,7 +144,6 @@
 </head>
 <body>
 
-  <!-- PŁYNNE INTRO -->
   <div id="introSplash">
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon.png" alt="Grillz Studio Icon" class="splash-logo">
   </div>
@@ -161,14 +158,12 @@
   <canvas class="output_canvas"></canvas>
 
   <div class="ui-top">
-    <!-- WAŻNE: Dodany atrybut crossorigin, aby zezwolić na kopiowanie logo na robione zdjęcie -->
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/logo.png" alt="Grillz Studio" class="logo-img" crossorigin="anonymous">
     <div class="subtext">Live AR Fitting Spot</div>
   </div>
 
   <div class="ui-bottom">
     <button class="btn-browse" onclick="toggleGallery(true)">PRZYMIARKA</button>
-    <!-- NOWY GUZIK ZDJĘCIA -->
     <button class="btn-camera" onclick="takePhoto()" title="Zrób zdjęcie">
       <svg viewBox="0 0 24 24">
         <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/>
@@ -176,7 +171,6 @@
     </button>
   </div>
 
-  <!-- GALERIA - ZŁOTO, SREBRO ORAZ KŁY WAMPIRA -->
   <div id="galleryModal">
     <div class="gallery-header">
       <div class="gallery-title">Wybierz Model</div>
@@ -184,7 +178,6 @@
     </div>
     
     <div class="products-grid">
-      <!-- 1. Gold Full -->
       <div class="product-card" onclick="selectProduct('gold_full', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz_full_gold.png" alt="Gold Full">
@@ -195,7 +188,6 @@
         </div>
       </div>
       
-      <!-- 2. Gold Top -->
       <div class="product-card" onclick="selectProduct('gold_top', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-top.png" alt="Gold Top">
@@ -206,7 +198,6 @@
         </div>
       </div>
 
-      <!-- 3. Gold Bottom -->
       <div class="product-card" onclick="selectProduct('gold_bottom', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-bottom.png" alt="Gold Bottom">
@@ -217,7 +208,6 @@
         </div>
       </div>
 
-      <!-- 4. Silver Full Set -->
       <div class="product-card" onclick="selectProduct('silver_full', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-full-silver.png" alt="Silver Full">
@@ -228,7 +218,6 @@
         </div>
       </div>
       
-      <!-- 5. Silver Top -->
       <div class="product-card" onclick="selectProduct('silver_top', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-top-silver.png" alt="Silver Top">
@@ -239,7 +228,6 @@
         </div>
       </div>
 
-      <!-- 6. Silver Bottom -->
       <div class="product-card" onclick="selectProduct('silver_bottom', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-bottom-silver.png" alt="Silver Bottom">
@@ -250,7 +238,6 @@
         </div>
       </div>
 
-      <!-- 7. Vampire Gold -->
       <div class="product-card" onclick="selectProduct('vamp_gold', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-gold.png" alt="Vampire Gold">
@@ -261,7 +248,6 @@
         </div>
       </div>
 
-      <!-- 8. Vampire Silver -->
       <div class="product-card" onclick="selectProduct('vamp_silver', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-silver.png" alt="Vampire Silver">
@@ -353,7 +339,6 @@
       }, 800);
     };
 
-    // WAŻNE: 'preserveDrawingBuffer: true' jest niezbędne do poprawnego wyciągnięcia zdjęcia modelu 3D z canvasu!
     const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true, preserveDrawingBuffer: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -519,16 +504,14 @@
     cameraHelper.start();
 
     // ==========================================
-    // FUNKCJA: ROBIENIE ZDJĘCIA (BEZ UI Z GUZIKAMI)
+    // FUNKCJA: ROBIENIE ZDJĘCIA I ZAPIS DO GALERII
     // ==========================================
     function takePhoto() {
-      // 1. Tworzymy wirtualne płótno dokładnie o rozmiarach ekranu
       const snapCanvas = document.createElement('canvas');
       snapCanvas.width = canvasElement.width;
       snapCanvas.height = canvasElement.height;
       const ctx = snapCanvas.getContext('2d');
 
-      // 2. Kopiujemy kadr z kamery (wymaga imitacji object-fit: cover)
       const videoRatio = videoElement.videoWidth / videoElement.videoHeight;
       const canvasRatio = snapCanvas.width / snapCanvas.height;
       let drawW, drawH, startX, startY;
@@ -545,23 +528,19 @@
         startY = 0;
       }
 
-      // Lustrzane odbicie tła (kamery) i modeli AR
       ctx.save();
       ctx.translate(snapCanvas.width, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(videoElement, startX, startY, drawW, drawH);
-      // 3. Nakładamy model 3D (Grillz) z przezroczystością
       ctx.drawImage(canvasElement, 0, 0, snapCanvas.width, snapCanvas.height);
       ctx.restore();
 
-      // 4. Domalowujemy kinową winietę na zdjęcie
       const gradient = ctx.createRadialGradient(snapCanvas.width/2, snapCanvas.height/2, snapCanvas.width * 0.35, snapCanvas.width/2, snapCanvas.height/2, snapCanvas.width);
       gradient.addColorStop(0, 'rgba(11,12,16,0)');
       gradient.addColorStop(1, 'rgba(11,12,16,0.85)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, snapCanvas.width, snapCanvas.height);
 
-      // 5. Wklejamy Logo i Tekst na górze zdjęcia (BEZ guzików!)
       const logoImg = document.querySelector('.logo-img');
       if (logoImg.complete && logoImg.naturalWidth !== 0) {
         const logoHeight = 85;
@@ -569,7 +548,6 @@
         ctx.drawImage(logoImg, (snapCanvas.width - logoWidth) / 2, 20, logoWidth, logoHeight);
       }
 
-      // 6. Rysujemy złoty napis "LIVE AR FITTING SPOT" z efektem cienia (glow)
       ctx.font = "bold 10px 'Syne', sans-serif";
       ctx.fillStyle = "#d4af37";
       ctx.textAlign = "center";
@@ -582,11 +560,27 @@
       }
       ctx.fillText("LIVE AR FITTING SPOT", snapCanvas.width / 2, 115);
 
-      // 7. Zapisujemy połączony obraz jako gotowe do pobrania zdjęcie PNG
-      const link = document.createElement('a');
-      link.download = 'GrillzStudio_Snap.png';
-      link.href = snapCanvas.toDataURL('image/png', 1.0);
-      link.click();
+      // Konwersja do Blob i pobieranie / udostępnianie bezpośrednio do galerii
+      snapCanvas.toBlob((blob) => {
+        const file = new File([blob], "GrillzStudio_Snap.png", { type: "image/png" });
+        
+        // Jeśli przeglądarka wspiera Web Share API (urządzenia mobilne iOS/Android) - wywołuje natywne okienko "Zapisz obraz"
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({
+            files: [file],
+            title: 'Grillz Studio Snap',
+            text: 'Moja przymiarka Grillz Studio!'
+          }).catch(() => {});
+        } else {
+          // Standardowy fallback dla komputerów
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'GrillzStudio_Snap.png';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }, 'image/png');
     }
   </script>
 </body>
