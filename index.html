@@ -8,9 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   
+  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
+  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -39,26 +41,10 @@
       animation: fluidSplash 3.2s ease-in-out forwards;
     }
     @keyframes fluidSplash {
-      0% { 
-        opacity: 0; 
-        transform: scale(0.5); 
-        filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0)); 
-      }
-      20% { 
-        opacity: 1; 
-        transform: scale(0.85); 
-        filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.6)); 
-      }
-      80% { 
-        opacity: 1; 
-        transform: scale(1.15); 
-        filter: drop-shadow(0 0 150px rgba(255, 255, 255, 1));
-      }
-      100% { 
-        opacity: 0; 
-        transform: scale(1.35); 
-        filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0)); 
-      }
+      0% { opacity: 0; transform: scale(0.5); filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0)); }
+      20% { opacity: 1; transform: scale(0.85); filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.6)); }
+      80% { opacity: 1; transform: scale(1.15); filter: drop-shadow(0 0 150px rgba(255, 255, 255, 1)); }
+      100% { opacity: 0; transform: scale(1.35); filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0)); }
     }
 
     /* NAGŁÓWEK NA GÓRZE */
@@ -77,10 +63,11 @@
       text-shadow: 0 2px 6px rgba(0,0,0,0.9); font-weight: 700;
     }
 
-    /* PRZYCISK NA DOLE */
+    /* PRZYCISKI NA DOLE (APARAT I PRZYMIARKA) */
     .ui-bottom {
       position: absolute; bottom: 40px; left: 0; width: 100%;
-      display: flex; justify-content: center; z-index: 10; pointer-events: auto;
+      display: flex; justify-content: center; align-items: center; gap: 16px;
+      z-index: 10; pointer-events: auto;
     }
     .btn-browse {
       background: #d4af37; color: #0b0c10; border: none;
@@ -90,6 +77,15 @@
       transition: all 0.3s ease;
     }
     .btn-browse:active { transform: scale(0.95); }
+    
+    .btn-camera {
+      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(212, 175, 55, 0.4);
+      width: 50px; height: 50px; border-radius: 25px; display: flex; justify-content: center; align-items: center;
+      cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .btn-camera:active { transform: scale(0.92); background: rgba(212, 175, 55, 0.2); }
+    .btn-camera svg { width: 22px; height: 22px; fill: #d4af37; }
 
     /* GALERIA (MODAL) */
     #galleryModal {
@@ -124,9 +120,7 @@
       margin-right: 15px; display: flex; justify-content: center; align-items: center;
       border: none; overflow: hidden;
     }
-    .product-thumb img {
-      width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
+    .product-thumb img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .product-card.selected .product-thumb img { transform: scale(1.25); }
 
     .product-info { display: flex; flex-direction: column; }
@@ -141,19 +135,18 @@
       transition: opacity 0.5s ease; padding: 20px; box-sizing: border-box; 
     }
     .spinner { 
-      width: 48px; height: 48px; border: 3px solid rgba(212, 175, 55, 0.2); 
-      border-top-color: #d4af37; border-radius: 50%; 
+      width: 48px; height: 48px; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #d4af37; border-radius: 50%; 
       animation: spin 1s linear infinite; margin-bottom: 20px; 
     }
     
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes clickBounce { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
-    
     .loading-text { color: #d4af37; font-size: 13px; letter-spacing: 3px; line-height: 1.5; font-weight: 700; }
   </style>
 </head>
 <body>
 
+  <!-- PŁYNNE INTRO -->
   <div id="introSplash">
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon.png" alt="Grillz Studio Icon" class="splash-logo">
   </div>
@@ -168,14 +161,22 @@
   <canvas class="output_canvas"></canvas>
 
   <div class="ui-top">
-    <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/logo.png" alt="Grillz Studio" class="logo-img">
+    <!-- WAŻNE: Dodany atrybut crossorigin, aby zezwolić na kopiowanie logo na robione zdjęcie -->
+    <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/logo.png" alt="Grillz Studio" class="logo-img" crossorigin="anonymous">
     <div class="subtext">Live AR Fitting Spot</div>
   </div>
 
   <div class="ui-bottom">
     <button class="btn-browse" onclick="toggleGallery(true)">PRZYMIARKA</button>
+    <!-- NOWY GUZIK ZDJĘCIA -->
+    <button class="btn-camera" onclick="takePhoto()" title="Zrób zdjęcie">
+      <svg viewBox="0 0 24 24">
+        <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/>
+      </svg>
+    </button>
   </div>
 
+  <!-- GALERIA - ZŁOTO, SREBRO ORAZ KŁY WAMPIRA -->
   <div id="galleryModal">
     <div class="gallery-header">
       <div class="gallery-title">Wybierz Model</div>
@@ -183,6 +184,7 @@
     </div>
     
     <div class="products-grid">
+      <!-- 1. Gold Full -->
       <div class="product-card" onclick="selectProduct('gold_full', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz_full_gold.png" alt="Gold Full">
@@ -193,6 +195,7 @@
         </div>
       </div>
       
+      <!-- 2. Gold Top -->
       <div class="product-card" onclick="selectProduct('gold_top', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-top.png" alt="Gold Top">
@@ -203,6 +206,7 @@
         </div>
       </div>
 
+      <!-- 3. Gold Bottom -->
       <div class="product-card" onclick="selectProduct('gold_bottom', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-bottom.png" alt="Gold Bottom">
@@ -213,6 +217,7 @@
         </div>
       </div>
 
+      <!-- 4. Silver Full Set -->
       <div class="product-card" onclick="selectProduct('silver_full', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-full-silver.png" alt="Silver Full">
@@ -223,6 +228,7 @@
         </div>
       </div>
       
+      <!-- 5. Silver Top -->
       <div class="product-card" onclick="selectProduct('silver_top', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-top-silver.png" alt="Silver Top">
@@ -233,6 +239,7 @@
         </div>
       </div>
 
+      <!-- 6. Silver Bottom -->
       <div class="product-card" onclick="selectProduct('silver_bottom', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-bottom-silver.png" alt="Silver Bottom">
@@ -243,6 +250,7 @@
         </div>
       </div>
 
+      <!-- 7. Vampire Gold -->
       <div class="product-card" onclick="selectProduct('vamp_gold', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-gold.png" alt="Vampire Gold">
@@ -253,6 +261,7 @@
         </div>
       </div>
 
+      <!-- 8. Vampire Silver -->
       <div class="product-card" onclick="selectProduct('vamp_silver', this)">
         <div class="product-thumb">
           <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-silver.png" alt="Vampire Silver">
@@ -266,14 +275,11 @@
   </div>
 
   <script>
-    // Zniknięcie tła intro
     window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('introSplash');
         splash.style.opacity = '0'; 
-        setTimeout(() => {
-          splash.style.display = 'none';
-        }, 800); 
+        setTimeout(() => { splash.style.display = 'none'; }, 800); 
       }, 2500); 
     });
 
@@ -317,18 +323,17 @@
     }
 
     const URLS = {
-      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=4",
-      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=4",
-      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=4",
-      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=4",
-      vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=3",
-      vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=3"
+      goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=5",
+      goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=5",
+      silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=5",
+      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=5",
+      vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=4",
+      vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=4"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
     const SCALE_MULTIPLIER_BOTTOM = 1.12; 
-
-    const MOVE_BOTTOM_DOWN = 10.0; 
+    const MOVE_BOTTOM_DOWN = 5.0; 
     const ROTATION_OFFSET_BOTTOM_X = -0.40; 
     const Z_DEPTH = -50; 
 
@@ -348,7 +353,8 @@
       }, 800);
     };
 
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true });
+    // WAŻNE: 'preserveDrawingBuffer: true' jest niezbędne do poprawnego wyciągnięcia zdjęcia modelu 3D z canvasu!
+    const renderer = new THREE.WebGLRenderer({ canvas: canvasElement, alpha: true, antialias: true, preserveDrawingBuffer: true });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 2.2; 
@@ -368,32 +374,16 @@
         texture.dispose(); pmremGenerator.dispose();
       });
 
-    // ==========================================
-    // STUDIO OŚWIETLENIOWE
-    // ==========================================
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
-    scene.add(ambientLight);
-
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x555555, 0.8);
-    hemiLight.position.set(0, 30, 0);
-    scene.add(hemiLight);
-
-    const frontLight = new THREE.DirectionalLight(0xfff5e6, 2.5);
-    frontLight.position.set(0, 10, 25);
-    scene.add(frontLight);
-
-    const leftLight = new THREE.DirectionalLight(0xe6f0ff, 1.8);
-    leftLight.position.set(-20, 10, 10);
-    scene.add(leftLight);
-
-    const rightLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    rightLight.position.set(20, 10, 10);
-    scene.add(rightLight);
+    // OŚWIETLENIE
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); scene.add(ambientLight);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x555555, 0.8); hemiLight.position.set(0, 30, 0); scene.add(hemiLight);
+    const frontLight = new THREE.DirectionalLight(0xfff5e6, 2.5); frontLight.position.set(0, 10, 25); scene.add(frontLight);
+    const leftLight = new THREE.DirectionalLight(0xe6f0ff, 1.8); leftLight.position.set(-20, 10, 10); scene.add(leftLight);
+    const rightLight = new THREE.DirectionalLight(0xffffff, 2.0); rightLight.position.set(20, 10, 10); scene.add(rightLight);
 
     const occluderMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
     let occluderMesh = new THREE.Mesh(new THREE.BufferGeometry(), occluderMaterial);
-    occluderMesh.position.z = 0; 
-    scene.add(occluderMesh);
+    occluderMesh.position.z = 0; scene.add(occluderMesh);
 
     function setupModelPro(modelScene, isTop, materialType) {
       const wrapper = new THREE.Group();
@@ -411,69 +401,40 @@
       modelScene.traverse((child) => {
         if (child.isMesh) {
           if (materialType === 'gold') {
-            child.material.color.setHex(0xffd700); 
-            child.material.metalness = 1.0; 
-            child.material.roughness = 0.08; 
-            child.material.envMapIntensity = 4.0; 
+            child.material.color.setHex(0xffd700); child.material.metalness = 1.0; child.material.roughness = 0.08; child.material.envMapIntensity = 4.0; 
           } else if (materialType === 'silver') {
-            child.material.color.setHex(0xe0e6ed); 
-            child.material.metalness = 1.0; 
-            child.material.roughness = 0.02; 
-            child.material.envMapIntensity = 5.5; 
+            child.material.color.setHex(0xe0e6ed); child.material.metalness = 1.0; child.material.roughness = 0.02; child.material.envMapIntensity = 5.5; 
           }
         }
       });
       return wrapper;
     }
 
-    const loadedModels = {
-      goldTop: null,
-      goldBottom: null,
-      silverTop: null,
-      silverBottom: null,
-      vampGold: null,
-      vampSilver: null
-    };
-
+    const loadedModels = { goldTop: null, goldBottom: null, silverTop: null, silverBottom: null, vampGold: null, vampSilver: null };
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
     
-    gltfLoader.load(URLS.goldTop, (gltf) => { 
-      loadedModels.goldTop = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; 
-    });
-    gltfLoader.load(URLS.goldBottom, (gltf) => { 
-      loadedModels.goldBottom = setupModelPro(gltf.scene, false, 'gold'); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; 
-    });
-    gltfLoader.load(URLS.silverTop, (gltf) => { 
-      loadedModels.silverTop = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.silverTop); loadedModels.silverTop.visible = false; 
-    });
-    gltfLoader.load(URLS.silverBottom, (gltf) => { 
-      loadedModels.silverBottom = setupModelPro(gltf.scene, false, 'silver'); scene.add(loadedModels.silverBottom); loadedModels.silverBottom.visible = false; 
-    });
-    gltfLoader.load(URLS.vampGold, (gltf) => { 
-      loadedModels.vampGold = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.vampGold); loadedModels.vampGold.visible = false; 
-    });
-    gltfLoader.load(URLS.vampSilver, (gltf) => { 
-      loadedModels.vampSilver = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.vampSilver); loadedModels.vampSilver.visible = false; 
-    });
+    gltfLoader.load(URLS.goldTop, (gltf) => { loadedModels.goldTop = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; });
+    gltfLoader.load(URLS.goldBottom, (gltf) => { loadedModels.goldBottom = setupModelPro(gltf.scene, false, 'gold'); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; });
+    gltfLoader.load(URLS.silverTop, (gltf) => { loadedModels.silverTop = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.silverTop); loadedModels.silverTop.visible = false; });
+    gltfLoader.load(URLS.silverBottom, (gltf) => { loadedModels.silverBottom = setupModelPro(gltf.scene, false, 'silver'); scene.add(loadedModels.silverBottom); loadedModels.silverBottom.visible = false; });
+    gltfLoader.load(URLS.vampGold, (gltf) => { loadedModels.vampGold = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.vampGold); loadedModels.vampGold.visible = false; });
+    gltfLoader.load(URLS.vampSilver, (gltf) => { loadedModels.vampSilver = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.vampSilver); loadedModels.vampSilver.visible = false; });
 
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
-    // Zmienne do wygładzania ruchu (eliminacja drgań)
     let smoothTop = { x: 0, y: 0, z: Z_DEPTH, rx: 0, ry: 0, rz: 0, scale: 0, initialized: false };
     let smoothBottom = { x: 0, y: 0, z: Z_DEPTH, rx: 0, ry: 0, rz: 0, scale: 0, initialized: false };
-    const LERP_FACTOR = 0.22; 
+    const LERP_FACTOR = 0.10; 
 
     function onResults(results) {
       renderer.setSize(window.innerWidth, window.innerHeight);
       if (width !== window.innerWidth) {
         width = window.innerWidth; height = window.innerHeight;
-        camera.left = -width/2; camera.right = width/2; camera.top = height/2; camera.bottom = -height/2;
-        camera.updateProjectionMatrix();
+        camera.left = -width/2; camera.right = width/2; camera.top = height/2; camera.bottom = -height/2; camera.updateProjectionMatrix();
       }
 
       Object.values(loadedModels).forEach(model => { if(model) model.visible = false; });
 
-      // Wyłączenie okludera (maski warg) dla kłów wampira, aby ich wystające końcówki nie znikały przy zaciśniętych zębach
       const isVampire = (activeTopModel === 'vampGold' || activeTopModel === 'vampSilver');
       occluderMesh.visible = !isVampire;
 
@@ -494,89 +455,57 @@
         if(occluderMesh.geometry) occluderMesh.geometry.dispose();
         occluderMesh.geometry = newGeo;
 
-        const leftCorner = landmarks[61];
-        const rightCorner = landmarks[291];
+        const leftCorner = landmarks[61]; const rightCorner = landmarks[291];
         const mouthWidthPixels = Math.sqrt(Math.pow((rightCorner.x - leftCorner.x) * width, 2) + Math.pow((rightCorner.y - leftCorner.y) * height, 2));
-
         const angleZ = Math.atan2((rightCorner.y - leftCorner.y) * height, (rightCorner.x - leftCorner.x) * width);
         const angleY = Math.asin((rightCorner.z - leftCorner.z) * 2.5);
         const topFace = landmarks[10]; const bottomFace = landmarks[152];
         const angleX = -Math.atan2((bottomFace.z - topFace.z), (bottomFace.y - topFace.y));
 
         if (activeTopModel && loadedModels[activeTopModel]) {
-            const topModel = loadedModels[activeTopModel];
-            const topLipInner = landmarks[13]; 
-            topModel.visible = true;
-            
+            const topModel = loadedModels[activeTopModel]; const topLipInner = landmarks[13]; topModel.visible = true;
             const targetScale = mouthWidthPixels * SCALE_MULTIPLIER_TOP;
-            const targetX = (topLipInner.x - 0.5) * width;
-            const targetY = -(topLipInner.y - 0.5) * height;
-            const targetZ = Z_DEPTH;
+            const targetX = (topLipInner.x - 0.5) * width; const targetY = -(topLipInner.y - 0.5) * height; const targetZ = Z_DEPTH;
 
             if (!smoothTop.initialized) {
               smoothTop.x = targetX; smoothTop.y = targetY; smoothTop.z = targetZ;
               smoothTop.rx = angleX; smoothTop.ry = angleY; smoothTop.rz = -angleZ;
-              smoothTop.scale = targetScale;
-              smoothTop.initialized = true;
+              smoothTop.scale = targetScale; smoothTop.initialized = true;
             } else {
-              smoothTop.x += (targetX - smoothTop.x) * LERP_FACTOR;
-              smoothTop.y += (targetY - smoothTop.y) * LERP_FACTOR;
-              smoothTop.z += (targetZ - smoothTop.z) * LERP_FACTOR;
-              smoothTop.rx += (angleX - smoothTop.rx) * LERP_FACTOR;
-              smoothTop.ry += (angleY - smoothTop.ry) * LERP_FACTOR;
-              smoothTop.rz += ((-angleZ) - smoothTop.rz) * LERP_FACTOR;
+              smoothTop.x += (targetX - smoothTop.x) * LERP_FACTOR; smoothTop.y += (targetY - smoothTop.y) * LERP_FACTOR; smoothTop.z += (targetZ - smoothTop.z) * LERP_FACTOR;
+              smoothTop.rx += (angleX - smoothTop.rx) * LERP_FACTOR; smoothTop.ry += (angleY - smoothTop.ry) * LERP_FACTOR; smoothTop.rz += ((-angleZ) - smoothTop.rz) * LERP_FACTOR;
               smoothTop.scale += (targetScale - smoothTop.scale) * LERP_FACTOR;
             }
 
-            // Jeszcze mocniejsze zwężenie rozstawu kłów wampira (szerokość zmniejszona do 0.60)
-            if (activeTopModel === 'vampGold' || activeTopModel === 'vampSilver') {
-              topModel.scale.set(smoothTop.scale * 0.60, smoothTop.scale, smoothTop.scale);
-            } else {
-              topModel.scale.set(smoothTop.scale, smoothTop.scale, smoothTop.scale);
-            }
+            if (isVampire) { topModel.scale.set(smoothTop.scale * 0.60, smoothTop.scale, smoothTop.scale); } 
+            else { topModel.scale.set(smoothTop.scale, smoothTop.scale, smoothTop.scale); }
 
-            topModel.rotation.set(smoothTop.rx, smoothTop.ry, smoothTop.rz); 
-            topModel.position.set(smoothTop.x, smoothTop.y, smoothTop.z);
-        } else {
-          smoothTop.initialized = false;
-        }
+            topModel.rotation.set(smoothTop.rx, smoothTop.ry, smoothTop.rz); topModel.position.set(smoothTop.x, smoothTop.y, smoothTop.z);
+        } else { smoothTop.initialized = false; }
 
         if (activeBottomModel && loadedModels[activeBottomModel]) {
-            const bottomModel = loadedModels[activeBottomModel];
-            const bottomLipInner = landmarks[14];
-            bottomModel.visible = true;
-
+            const bottomModel = loadedModels[activeBottomModel]; const bottomLipInner = landmarks[14]; bottomModel.visible = true;
             const targetScaleB = mouthWidthPixels * SCALE_MULTIPLIER_BOTTOM;
-            const targetXB = (bottomLipInner.x - 0.5) * width;
-            const targetYB = -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN;
-            const targetZB = Z_DEPTH;
+            const targetXB = (bottomLipInner.x - 0.5) * width; const targetYB = -(bottomLipInner.y - 0.5) * height - MOVE_BOTTOM_DOWN; const targetZB = Z_DEPTH;
 
             if (!smoothBottom.initialized) {
               smoothBottom.x = targetXB; smoothBottom.y = targetYB; smoothBottom.z = targetZB;
               smoothBottom.rx = angleX + ROTATION_OFFSET_BOTTOM_X; smoothBottom.ry = angleY; smoothBottom.rz = -angleZ;
-              smoothBottom.scale = targetScaleB;
-              smoothBottom.initialized = true;
+              smoothBottom.scale = targetScaleB; smoothBottom.initialized = true;
             } else {
-              smoothBottom.x += (targetXB - smoothBottom.x) * LERP_FACTOR;
-              smoothBottom.y += (targetYB - smoothBottom.y) * LERP_FACTOR;
-              smoothBottom.z += (targetZB - smoothBottom.z) * LERP_FACTOR;
-              smoothBottom.rx += ((angleX + ROTATION_OFFSET_BOTTOM_X) - smoothBottom.rx) * LERP_FACTOR;
-              smoothBottom.ry += (angleY - smoothBottom.ry) * LERP_FACTOR;
-              smoothBottom.rz += ((-angleZ) - smoothBottom.rz) * LERP_FACTOR;
+              smoothBottom.x += (targetXB - smoothBottom.x) * LERP_FACTOR; smoothBottom.y += (targetYB - smoothBottom.y) * LERP_FACTOR; smoothBottom.z += (targetZB - smoothBottom.z) * LERP_FACTOR;
+              smoothBottom.rx += ((angleX + ROTATION_OFFSET_BOTTOM_X) - smoothBottom.rx) * LERP_FACTOR; smoothBottom.ry += (angleY - smoothBottom.ry) * LERP_FACTOR; smoothBottom.rz += ((-angleZ) - smoothBottom.rz) * LERP_FACTOR;
               smoothBottom.scale += (targetScaleB - smoothBottom.scale) * LERP_FACTOR;
             }
 
             bottomModel.scale.set(smoothBottom.scale, smoothBottom.scale, smoothBottom.scale);
             bottomModel.rotation.set(smoothBottom.rx, smoothBottom.ry, smoothBottom.rz);
             bottomModel.position.set(smoothBottom.x, smoothBottom.y, smoothBottom.z);
-        } else {
-          smoothBottom.initialized = false;
-        }
+        } else { smoothBottom.initialized = false; }
 
       } else {
         if(occluderMesh.geometry) { occluderMesh.geometry.dispose(); occluderMesh.geometry = new THREE.BufferGeometry(); }
-        smoothTop.initialized = false;
-        smoothBottom.initialized = false;
+        smoothTop.initialized = false; smoothBottom.initialized = false;
       }
 
       renderer.render(scene, camera);
@@ -588,6 +517,77 @@
 
     const cameraHelper = new Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 1280, height: 720 });
     cameraHelper.start();
+
+    // ==========================================
+    // FUNKCJA: ROBIENIE ZDJĘCIA (BEZ UI Z GUZIKAMI)
+    // ==========================================
+    function takePhoto() {
+      // 1. Tworzymy wirtualne płótno dokładnie o rozmiarach ekranu
+      const snapCanvas = document.createElement('canvas');
+      snapCanvas.width = canvasElement.width;
+      snapCanvas.height = canvasElement.height;
+      const ctx = snapCanvas.getContext('2d');
+
+      // 2. Kopiujemy kadr z kamery (wymaga imitacji object-fit: cover)
+      const videoRatio = videoElement.videoWidth / videoElement.videoHeight;
+      const canvasRatio = snapCanvas.width / snapCanvas.height;
+      let drawW, drawH, startX, startY;
+      
+      if (canvasRatio > videoRatio) {
+        drawW = snapCanvas.width;
+        drawH = snapCanvas.width / videoRatio;
+        startX = 0;
+        startY = (snapCanvas.height - drawH) / 2;
+      } else {
+        drawW = snapCanvas.height * videoRatio;
+        drawH = snapCanvas.height;
+        startX = (snapCanvas.width - drawW) / 2;
+        startY = 0;
+      }
+
+      // Lustrzane odbicie tła (kamery) i modeli AR
+      ctx.save();
+      ctx.translate(snapCanvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(videoElement, startX, startY, drawW, drawH);
+      // 3. Nakładamy model 3D (Grillz) z przezroczystością
+      ctx.drawImage(canvasElement, 0, 0, snapCanvas.width, snapCanvas.height);
+      ctx.restore();
+
+      // 4. Domalowujemy kinową winietę na zdjęcie
+      const gradient = ctx.createRadialGradient(snapCanvas.width/2, snapCanvas.height/2, snapCanvas.width * 0.35, snapCanvas.width/2, snapCanvas.height/2, snapCanvas.width);
+      gradient.addColorStop(0, 'rgba(11,12,16,0)');
+      gradient.addColorStop(1, 'rgba(11,12,16,0.85)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, snapCanvas.width, snapCanvas.height);
+
+      // 5. Wklejamy Logo i Tekst na górze zdjęcia (BEZ guzików!)
+      const logoImg = document.querySelector('.logo-img');
+      if (logoImg.complete && logoImg.naturalWidth !== 0) {
+        const logoHeight = 85;
+        const logoWidth = logoImg.naturalWidth * (logoHeight / logoImg.naturalHeight);
+        ctx.drawImage(logoImg, (snapCanvas.width - logoWidth) / 2, 20, logoWidth, logoHeight);
+      }
+
+      // 6. Rysujemy złoty napis "LIVE AR FITTING SPOT" z efektem cienia (glow)
+      ctx.font = "bold 10px 'Syne', sans-serif";
+      ctx.fillStyle = "#d4af37";
+      ctx.textAlign = "center";
+      ctx.shadowColor = "rgba(0,0,0,0.9)";
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 2;
+      
+      if (ctx.letterSpacing !== undefined) {
+         ctx.letterSpacing = "4px";
+      }
+      ctx.fillText("LIVE AR FITTING SPOT", snapCanvas.width / 2, 115);
+
+      // 7. Zapisujemy połączony obraz jako gotowe do pobrania zdjęcie PNG
+      const link = document.createElement('a');
+      link.download = 'GrillzStudio_Snap.png';
+      link.href = snapCanvas.toDataURL('image/png', 1.0);
+      link.click();
+    }
   </script>
 </body>
 </html>
