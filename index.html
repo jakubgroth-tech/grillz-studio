@@ -61,7 +61,7 @@
       text-shadow: 0 2px 6px rgba(0,0,0,0.9); font-weight: 700;
     }
 
-    /* PRZYCISKI NA DOLE (WYŻEJ, ABY OMINĄĆ NETLIFY) */
+    /* PRZYCISKI NA DOLE */
     .ui-bottom {
       position: absolute; bottom: 95px; left: 0; width: 100%;
       display: flex; justify-content: center; align-items: center; gap: 16px;
@@ -172,18 +172,14 @@
   </div>
 
   <div id="photoModal" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-    <div style="display: flex; justify-content: space-between; width: 100%; max-width: 400px; margin-bottom: 12px; align-items: center;">
-      <div style="color: #d4af37; font-size: 14px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">Twój Snap</div>
-      <button onclick="closePhotoModal()" style="color: #d4af37; font-size: 28px; background: none; border: none; cursor: pointer;">×</button>
-    </div>
     <div style="position: relative; max-width: 100%; max-height: 65vh; border-radius: 14px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
       <img id="snapPreviewImg" src="" alt="Snap Preview" style="width: 100%; height: auto; max-height: 65vh; display: block; object-fit: contain;">
     </div>
-    <div style="color: #aaa; font-size: 11px; text-align: center; margin-top: 12px; letter-spacing: 1px; text-transform: uppercase;">
+    <div style="color: #aaa; font-size: 11px; text-align: center; margin-top: 14px; letter-spacing: 1px; text-transform: uppercase;">
       Przytrzymaj zdjęcie, aby zapisać w galerii
     </div>
     <div style="display: flex; gap: 12px; margin-top: 18px; width: 100%; max-width: 400px; justify-content: center;">
-      <a id="downloadLink" download="GrillzStudio_Snap.png" class="btn-browse" style="text-decoration: none; text-align: center; flex: 1; padding: 14px 20px;">Pobierz plik</a>
+      <a id="downloadLink" download="GrillzStudio_Snap.png" class="btn-browse" style="text-decoration: none; text-align: center; flex: 1; padding: 14px 20px;">Pobierz</a>
       <button onclick="closePhotoModal()" class="btn-browse" style="background: rgba(255,255,255,0.1); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.2); padding: 14px 20px;">Powrót</button>
     </div>
   </div>
@@ -579,7 +575,6 @@
 
       const dataUrl = snapCanvas.toDataURL('image/png', 1.0);
       
-      // Wyświetlenie w pięknym, wbudowanym oknie podglądu (modal)
       document.getElementById('snapPreviewImg').src = dataUrl;
       document.getElementById('downloadLink').href = dataUrl;
       document.getElementById('photoModal').style.display = 'flex';
@@ -587,6 +582,10 @@
 
     function closePhotoModal() {
       document.getElementById('photoModal').style.display = 'none';
+      // Wznowienie strumienia kamery po zamknięciu podglądu zdjęcia
+      if (videoElement.paused) {
+        videoElement.play().catch(() => {});
+      }
     }
   </script>
 </body>
