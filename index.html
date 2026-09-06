@@ -292,26 +292,6 @@
           <div class="product-desc">Srebro • Tylko Dół</div>
         </div>
       </div>
-
-      <div class="product-card" onclick="selectProduct('vamp_gold', this)">
-        <div class="product-thumb">
-          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-gold.png" alt="Vampire Gold">
-        </div>
-        <div class="product-info">
-          <div class="product-name">Vampire Gold</div>
-          <div class="product-desc">Złoto • Kły wampira</div>
-        </div>
-      </div>
-
-      <div class="product-card" onclick="selectProduct('vamp_silver', this)">
-        <div class="product-thumb">
-          <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon-grillz-vamp-silver.png" alt="Vampire Silver">
-        </div>
-        <div class="product-info">
-          <div class="product-name">Vampire Silver</div>
-          <div class="product-desc">Srebro • Kły wampira</div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -374,10 +354,6 @@
         activeTopModel = 'silverTop';
       } else if (productId === 'silver_bottom') {
         activeBottomModel = 'silverBottom';
-      } else if (productId === 'vamp_gold') {
-        activeTopModel = 'vampGold';
-      } else if (productId === 'vamp_silver') {
-        activeTopModel = 'vampSilver';
       }
       
       setTimeout(() => toggleGallery(false), 350);
@@ -387,9 +363,7 @@
       goldTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=5",
       goldBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=5",
       silverTop: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-top.glb?v=5",
-      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=5",
-      vampGold: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-gold.glb?v=4",
-      vampSilver: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-vamp-silver.glb?v=4"
+      silverBottom: "https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/grillz-bottom.glb?v=5"
     };
 
     const SCALE_MULTIPLIER_TOP = 1.0; 
@@ -470,15 +444,13 @@
       return wrapper;
     }
 
-    const loadedModels = { goldTop: null, goldBottom: null, silverTop: null, silverBottom: null, vampGold: null, vampSilver: null };
+    const loadedModels = { goldTop: null, goldBottom: null, silverTop: null, silverBottom: null };
     const gltfLoader = new THREE.GLTFLoader(loadingManager);
     
     gltfLoader.load(URLS.goldTop, (gltf) => { loadedModels.goldTop = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.goldTop); loadedModels.goldTop.visible = false; });
     gltfLoader.load(URLS.goldBottom, (gltf) => { loadedModels.goldBottom = setupModelPro(gltf.scene, false, 'gold'); scene.add(loadedModels.goldBottom); loadedModels.goldBottom.visible = false; });
     gltfLoader.load(URLS.silverTop, (gltf) => { loadedModels.silverTop = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.silverTop); loadedModels.silverTop.visible = false; });
     gltfLoader.load(URLS.silverBottom, (gltf) => { loadedModels.silverBottom = setupModelPro(gltf.scene, false, 'silver'); scene.add(loadedModels.silverBottom); loadedModels.silverBottom.visible = false; });
-    gltfLoader.load(URLS.vampGold, (gltf) => { loadedModels.vampGold = setupModelPro(gltf.scene, true, 'gold'); scene.add(loadedModels.vampGold); loadedModels.vampGold.visible = false; });
-    gltfLoader.load(URLS.vampSilver, (gltf) => { loadedModels.vampSilver = setupModelPro(gltf.scene, true, 'silver'); scene.add(loadedModels.vampSilver); loadedModels.vampSilver.visible = false; });
 
     const MOUTH_HOLE_INDICES = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 
@@ -495,8 +467,8 @@
 
       Object.values(loadedModels).forEach(model => { if(model) model.visible = false; });
 
-      const isVampire = (activeTopModel === 'vampGold' || activeTopModel === 'vampSilver');
-      occluderMesh.visible = !isVampire;
+      // Okluder zawsze włączony dla standardowych modeli
+      occluderMesh.visible = true;
 
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
@@ -537,10 +509,9 @@
               smoothTop.scale += (targetScale - smoothTop.scale) * LERP_FACTOR;
             }
 
-            if (isVampire) { topModel.scale.set(smoothTop.scale * 0.60, smoothTop.scale, smoothTop.scale); } 
-            else { topModel.scale.set(smoothTop.scale, smoothTop.scale, smoothTop.scale); }
-
-            topModel.rotation.set(smoothTop.rx, smoothTop.ry, smoothTop.rz); topModel.position.set(smoothTop.x, smoothTop.y, smoothTop.z);
+            topModel.scale.set(smoothTop.scale, smoothTop.scale, smoothTop.scale);
+            topModel.rotation.set(smoothTop.rx, smoothTop.ry, smoothTop.rz); 
+            topModel.position.set(smoothTop.x, smoothTop.y, smoothTop.z);
         } else { smoothTop.initialized = false; }
 
         if (activeBottomModel && loadedModels[activeBottomModel]) {
