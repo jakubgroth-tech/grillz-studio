@@ -8,9 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   
+  <!-- MediaPipe AI -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
+  <!-- Three.js & Loaders -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
@@ -28,21 +30,35 @@
       z-index: 3; pointer-events: none;
     }
     
-    /* PŁYNNE INTRO Z BIAŁĄ POŚWIATĄ */
+    /* PŁYNNE INTRO Z BIAŁĄ POŚWIATĄ ORAZ TAP TO ENTER */
     #introSplash {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: #0b0c10; z-index: 60; display: flex; justify-content: center; align-items: center;
-      transition: opacity 0.8s ease-in-out;
+      background: #0b0c10; z-index: 60; display: flex; flex-direction: column; justify-content: center; align-items: center;
+      transition: opacity 0.8s ease-in-out; cursor: pointer;
     }
     .splash-logo {
       width: min(75vw, 320px); height: min(75vw, 320px); object-fit: contain;
-      animation: fluidSplash 3.2s ease-in-out forwards;
+      animation: fluidSplash 2.5s ease-in-out forwards;
     }
     @keyframes fluidSplash {
       0% { opacity: 0; transform: scale(0.5); filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0)); }
-      20% { opacity: 1; transform: scale(0.85); filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.6)); }
-      80% { opacity: 1; transform: scale(1.15); filter: drop-shadow(0 0 150px rgba(255, 255, 255, 1)); }
-      100% { opacity: 0; transform: scale(1.35); filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0)); }
+      30% { opacity: 1; transform: scale(0.9); filter: drop-shadow(0 0 60px rgba(255, 255, 255, 0.7)); }
+      100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.2)); }
+    }
+    
+    .tap-to-enter {
+      position: absolute; bottom: 20%;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
+      opacity: 0; transition: opacity 1.5s ease;
+    }
+    .tap-to-enter.visible {
+      opacity: 1;
+      animation: pulseTap 2s infinite alternate;
+    }
+    @keyframes pulseTap {
+      0% { opacity: 0.2; }
+      100% { opacity: 0.8; text-shadow: 0 0 8px rgba(255,255,255,0.4); }
     }
 
     /* NAGŁÓWEK NA GÓRZE */
@@ -153,8 +169,10 @@
 </head>
 <body>
 
+  <!-- PŁYNNE INTRO Z "TAP TO ENTER" -->
   <div id="introSplash">
     <img src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/icon.png" alt="Grillz Studio Icon" class="splash-logo">
+    <div id="tapToEnter" class="tap-to-enter">TAP TO ENTER</div>
   </div>
 
   <div id="loadingScreen" style="opacity: 0; display: none;">
@@ -162,6 +180,7 @@
     <div class="loading-text">WCZYTYWANIE KOLEKCJI...</div>
   </div>
 
+  <!-- ODTWARZACZ MUZYKI (WGRANIE PLIKU beat.mp3 NA GITHUB) -->
   <audio id="bgMusic" loop>
     <source src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/beat.mp3" type="audio/mpeg">
   </audio>
@@ -184,20 +203,19 @@
     </button>
   </div>
 
+  <!-- EKRAN PODGLĄDU ZDJĘCIA (TYLKO UDOSTĘPNIJ & POWRÓT) -->
   <div id="photoModal">
     <div style="position: relative; max-width: 100%; max-height: 62vh; border-radius: 14px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
       <img id="snapPreviewImg" src="" alt="Snap Preview" style="width: 100%; height: auto; max-height: 62vh; display: block; object-fit: contain;">
     </div>
     
-    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px; width: 100%; max-width: 360px; justify-content: center;">
-      <div style="display: flex; gap: 10px; width: 100%;">
-        <button onclick="sharePhoto()" class="btn-browse" style="flex: 1; padding: 14px 10px; font-size: 11px;">Udostępnij</button>
-        <a id="downloadLink" download="GrillzStudio_Snap.png" class="btn-browse" style="flex: 1; padding: 14px 10px; font-size: 11px;">Pobierz</a>
-      </div>
-      <button onclick="closePhotoModal()" class="btn-browse" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); width: 100%; padding: 12px 10px; font-size: 11px;">Powrót</button>
+    <div style="display: flex; gap: 12px; margin-top: 25px; width: 100%; max-width: 360px; justify-content: center;">
+      <button onclick="sharePhoto()" class="btn-browse" style="flex: 1; padding: 14px 10px; font-size: 11px;">Udostępnij</button>
+      <button onclick="closePhotoModal()" class="btn-browse" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); flex: 1; padding: 14px 10px; font-size: 11px;">Powrót</button>
     </div>
   </div>
 
+  <!-- GALERIA (MODAL) -->
   <div id="galleryModal">
     <div class="gallery-header">
       <div class="gallery-title">Wybierz Model</div>
@@ -299,21 +317,22 @@
       }
     }
 
-    // Automatyczne odpalenie muzyki zaraz po przejściu z intro do głównego ekranu
+    // LOGIKA INTRO I TAP TO ENTER
     window.addEventListener('load', () => {
+      // Po 1.8s pokaż tekst 'TAP TO ENTER'
       setTimeout(() => {
-        const splash = document.getElementById('introSplash');
-        splash.style.opacity = '0'; 
-        setTimeout(() => { 
-          splash.style.display = 'none'; 
-          startMusic(); 
-        }, 800); 
-      }, 2500); 
+        document.getElementById('tapToEnter').classList.add('visible');
+      }, 1800); 
     });
 
-    // Fallback dla przeglądarek blokujących autoplay bez pierwsze dotknięcia
-    document.body.addEventListener('click', () => { startMusic(); });
-    document.body.addEventListener('touchstart', () => { startMusic(); });
+    // Przejście z Intro do Przymierzalni i odpalenie muzyki przy tapnięciu
+    document.getElementById('introSplash').addEventListener('click', function() {
+      startMusic();
+      this.style.opacity = '0'; // Płynne zniknięcie
+      setTimeout(() => { 
+        this.style.display = 'none'; // Usunięcie elementu po zniknięciu
+      }, 800);
+    });
 
     let activeTopModel = null;    
     let activeBottomModel = null;
@@ -621,7 +640,6 @@
       snapCanvas.toBlob((blob) => { currentSnapBlob = blob; }, 'image/png');
 
       document.getElementById('snapPreviewImg').src = dataUrl;
-      document.getElementById('downloadLink').href = dataUrl;
       document.getElementById('photoModal').style.display = 'flex';
       videoElement.pause();
     }
