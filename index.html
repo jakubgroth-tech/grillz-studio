@@ -85,6 +85,19 @@
     .btn-camera:active { transform: scale(0.92); background: rgba(212, 175, 55, 0.2); }
     .btn-camera svg { width: 22px; height: 22px; fill: #d4af37; }
 
+    /* CZYSTY MODAL DO PODGLĄDU ZDJĘCIA (BEZ NAPISÓW "X" CZY "TWÓJ SNAP") */
+    #photoModal {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+      z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px; box-sizing: border-box;
+    }
+    .photo-instruction {
+      color: #fff; font-size: 13px; text-align: center; margin-top: 18px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); } 100% { opacity: 0.7; } }
+
     /* GALERIA (MODAL) */
     #galleryModal {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -153,6 +166,10 @@
     <div class="loading-text">WCZYTYWANIE KOLEKCJI...</div>
   </div>
 
+  <audio id="bgMusic" loop>
+    <source src="https://raw.githubusercontent.com/jakubgroth-tech/grillz-studio/main/beat.mp3" type="audio/mpeg">
+  </audio>
+
   <video class="input_video" autoplay playsinline muted></video>
   <div class="vignette"></div>
   <canvas class="output_canvas"></canvas>
@@ -171,15 +188,17 @@
     </button>
   </div>
 
-  <div id="photoModal" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-    <div style="position: relative; max-width: 100%; max-height: 65vh; border-radius: 14px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
-      <img id="snapPreviewImg" src="" alt="Snap Preview" style="width: 100%; height: auto; max-height: 65vh; display: block; object-fit: contain;">
+  <div id="photoModal">
+    <div style="position: relative; max-width: 100%; max-height: 65vh; border-radius: 14px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
+      <img id="snapPreviewImg" src="" alt="Snap Preview" style="width: 100%; height: auto; max-height: 65vh; display: block; object-fit: contain; pointer-events: auto;">
     </div>
-    <div style="color: #aaa; font-size: 11px; text-align: center; margin-top: 14px; letter-spacing: 1px; text-transform: uppercase;">
-      Przytrzymaj zdjęcie, aby zapisać w galerii
+    
+    <div class="photo-instruction">
+      👇 Przytrzymaj zdjęcie palcem, aby zapisać 👇
     </div>
+    
     <div style="display: flex; gap: 12px; margin-top: 18px; width: 100%; max-width: 400px; justify-content: center;">
-      <a id="downloadLink" download="GrillzStudio_Snap.png" class="btn-browse" style="text-decoration: none; text-align: center; flex: 1; padding: 14px 20px;">Pobierz</a>
+      <button onclick="sharePhoto()" class="btn-browse" style="flex: 1; padding: 14px 20px;">Udostępnij</button>
       <button onclick="closePhotoModal()" class="btn-browse" style="background: rgba(255,255,255,0.1); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.2); padding: 14px 20px;">Powrót</button>
     </div>
   </div>
@@ -274,6 +293,16 @@
   </div>
 
   <script>
+    // Uruchomienie muzyki przy pierwszym dotknięciu ekranu (zgodnie z zasadami przeglądarek)
+    let isMusicPlaying = false;
+    document.body.addEventListener('click', () => {
+      if (!isMusicPlaying) {
+        const audio = document.getElementById('bgMusic');
+        audio.play().catch(() => { /* Zignoruj jeśli zablokowane */ });
+        isMusicPlaying = true;
+      }
+    });
+
     window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('introSplash');
@@ -519,6 +548,8 @@
     // ==========================================
     // FUNKCJA: ROBIENIE ZDJĘCIA I WYŚWIETLENIE W MODALU
     // ==========================================
+    let currentSnapBlob = null;
+
     function takePhoto() {
       const snapCanvas = document.createElement('canvas');
       snapCanvas.width = canvasElement.width;
@@ -554,37 +585,66 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, snapCanvas.width, snapCanvas.height);
 
+      // --- POPRAWKA LOGO I TEKSTU ---
       const logoImg = document.querySelector('.logo-img');
       if (logoImg.complete && logoImg.naturalWidth !== 0) {
+        ctx.save();
         const logoHeight = 85;
         const logoWidth = logoImg.naturalWidth * (logoHeight / logoImg.naturalHeight);
+        // Silna, wyróżniająca poświata dla logo
+        ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+        ctx.shadowBlur = 15;
         ctx.drawImage(logoImg, (snapCanvas.width - logoWidth) / 2, 20, logoWidth, logoHeight);
+        ctx.restore();
       }
 
-      ctx.font = "bold 10px 'Syne', sans-serif";
-      ctx.fillStyle = "#d4af37";
+      ctx.save();
+      ctx.font = "bold 7px 'Syne', sans-serif"; // Zmniejszony font
+      ctx.fillStyle = "rgba(212, 175, 55, 0.7)"; // Delikatniejszy kolor
       ctx.textAlign = "center";
       ctx.shadowColor = "rgba(0,0,0,0.9)";
-      ctx.shadowBlur = 6;
-      ctx.shadowOffsetY = 2;
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetY = 1;
       
       if (ctx.letterSpacing !== undefined) {
-         ctx.letterSpacing = "4px";
+         ctx.letterSpacing = "3px"; // Węższy rozstaw
       }
       ctx.fillText("LIVE AR FITTING SPOT", snapCanvas.width / 2, 115);
+      ctx.restore();
+      // ------------------------------
 
       const dataUrl = snapCanvas.toDataURL('image/png', 1.0);
       
+      snapCanvas.toBlob((blob) => { currentSnapBlob = blob; }, 'image/png');
+
       document.getElementById('snapPreviewImg').src = dataUrl;
-      document.getElementById('downloadLink').href = dataUrl;
       document.getElementById('photoModal').style.display = 'flex';
+      videoElement.pause(); // pauza w tle na czas oglądania snapa
     }
 
     function closePhotoModal() {
       document.getElementById('photoModal').style.display = 'none';
-      // Wznowienie strumienia kamery po zamknięciu podglądu zdjęcia
       if (videoElement.paused) {
         videoElement.play().catch(() => {});
+      }
+    }
+
+    function sharePhoto() {
+      if (currentSnapBlob && navigator.canShare) {
+        const file = new File([currentSnapBlob], "GrillzStudio_Snap.png", { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          navigator.share({
+            files: [file],
+            title: 'Grillz Studio',
+            text: 'Mój snap z Grillz Studio!'
+          }).catch(() => {});
+        }
+      } else {
+         // Fallback dla przeglądarek desktopowych nie wspierających Web Share
+         const link = document.createElement('a');
+         link.href = document.getElementById('snapPreviewImg').src;
+         link.download = 'GrillzStudio_Snap.png';
+         link.click();
       }
     }
   </script>
