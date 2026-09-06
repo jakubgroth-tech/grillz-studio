@@ -61,7 +61,7 @@
       text-shadow: 0 2px 6px rgba(0,0,0,0.9); font-weight: 700;
     }
 
-    /* PRZYCISKI NA DOLE */
+    /* PRZYCISKI NA DOLE (PODNIESIONE PONAD NETLIFY) */
     .ui-bottom {
       position: absolute; bottom: 95px; left: 0; width: 100%;
       display: flex; justify-content: center; align-items: center; gap: 16px;
@@ -73,6 +73,7 @@
       font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 2.5px;
       cursor: pointer; box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
       transition: all 0.3s ease;
+      display: inline-flex; justify-content: center; align-items: center; text-decoration: none;
     }
     .btn-browse:active { transform: scale(0.95); }
     
@@ -85,18 +86,13 @@
     .btn-camera:active { transform: scale(0.92); background: rgba(212, 175, 55, 0.2); }
     .btn-camera svg { width: 22px; height: 22px; fill: #d4af37; }
 
-    /* CZYSTY MODAL DO PODGLĄDU ZDJĘCIA (BEZ NAPISÓW "X" CZY "TWÓJ SNAP") */
+    /* CZYSTE OKNO PODGLĄDU ZDJĘCIA */
     #photoModal {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
       z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center;
       padding: 20px; box-sizing: border-box;
     }
-    .photo-instruction {
-      color: #fff; font-size: 13px; text-align: center; margin-top: 18px; font-weight: 700;
-      letter-spacing: 1px; text-transform: uppercase; animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); } 100% { opacity: 0.7; } }
 
     /* GALERIA (MODAL) */
     #galleryModal {
@@ -189,17 +185,16 @@
   </div>
 
   <div id="photoModal">
-    <div style="position: relative; max-width: 100%; max-height: 65vh; border-radius: 14px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
-      <img id="snapPreviewImg" src="" alt="Snap Preview" style="width: 100%; height: auto; max-height: 65vh; display: block; object-fit: contain; pointer-events: auto;">
+    <div style="position: relative; max-width: 100%; max-height: 62vh; border-radius: 14px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
+      <img id="snapPreviewImg" src="" alt="Snap Preview" style="width: 100%; height: auto; max-height: 62vh; display: block; object-fit: contain;">
     </div>
     
-    <div class="photo-instruction">
-      👇 Przytrzymaj zdjęcie palcem, aby zapisać 👇
-    </div>
-    
-    <div style="display: flex; gap: 12px; margin-top: 18px; width: 100%; max-width: 400px; justify-content: center;">
-      <button onclick="sharePhoto()" class="btn-browse" style="flex: 1; padding: 14px 20px;">Udostępnij</button>
-      <button onclick="closePhotoModal()" class="btn-browse" style="background: rgba(255,255,255,0.1); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.2); padding: 14px 20px;">Powrót</button>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px; width: 100%; max-width: 360px; justify-content: center;">
+      <div style="display: flex; gap: 10px; width: 100%;">
+        <button onclick="sharePhoto()" class="btn-browse" style="flex: 1; padding: 14px 10px; font-size: 11px;">Udostępnij</button>
+        <a id="downloadLink" download="GrillzStudio_Snap.png" class="btn-browse" style="flex: 1; padding: 14px 10px; font-size: 11px;">Pobierz</a>
+      </div>
+      <button onclick="closePhotoModal()" class="btn-browse" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); width: 100%; padding: 12px 10px; font-size: 11px;">Powrót</button>
     </div>
   </div>
 
@@ -293,23 +288,32 @@
   </div>
 
   <script>
-    // Uruchomienie muzyki przy pierwszym dotknięciu ekranu (zgodnie z zasadami przeglądarek)
     let isMusicPlaying = false;
-    document.body.addEventListener('click', () => {
+    
+    function startMusic() {
       if (!isMusicPlaying) {
         const audio = document.getElementById('bgMusic');
-        audio.play().catch(() => { /* Zignoruj jeśli zablokowane */ });
-        isMusicPlaying = true;
+        if (audio) {
+          audio.play().then(() => { isMusicPlaying = true; }).catch(() => {});
+        }
       }
-    });
+    }
 
+    // Automatyczne odpalenie muzyki zaraz po przejściu z intro do głównego ekranu
     window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('introSplash');
         splash.style.opacity = '0'; 
-        setTimeout(() => { splash.style.display = 'none'; }, 800); 
+        setTimeout(() => { 
+          splash.style.display = 'none'; 
+          startMusic(); 
+        }, 800); 
       }, 2500); 
     });
+
+    // Fallback dla przeglądarek blokujących autoplay bez pierwsze dotknięcia
+    document.body.addEventListener('click', () => { startMusic(); });
+    document.body.addEventListener('touchstart', () => { startMusic(); });
 
     let activeTopModel = null;    
     let activeBottomModel = null;
@@ -585,29 +589,28 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, snapCanvas.width, snapCanvas.height);
 
-      // --- POPRAWKA LOGO I TEKSTU ---
+      // --- LOGO I SUBTELNY SUBTEKST ---
       const logoImg = document.querySelector('.logo-img');
       if (logoImg.complete && logoImg.naturalWidth !== 0) {
         ctx.save();
         const logoHeight = 85;
         const logoWidth = logoImg.naturalWidth * (logoHeight / logoImg.naturalHeight);
-        // Silna, wyróżniająca poświata dla logo
-        ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-        ctx.shadowBlur = 15;
+        ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+        ctx.shadowBlur = 18;
         ctx.drawImage(logoImg, (snapCanvas.width - logoWidth) / 2, 20, logoWidth, logoHeight);
         ctx.restore();
       }
 
       ctx.save();
-      ctx.font = "bold 7px 'Syne', sans-serif"; // Zmniejszony font
-      ctx.fillStyle = "rgba(212, 175, 55, 0.7)"; // Delikatniejszy kolor
+      ctx.font = "bold 7px 'Syne', sans-serif";
+      ctx.fillStyle = "rgba(212, 175, 55, 0.75)";
       ctx.textAlign = "center";
       ctx.shadowColor = "rgba(0,0,0,0.9)";
       ctx.shadowBlur = 4;
       ctx.shadowOffsetY = 1;
       
       if (ctx.letterSpacing !== undefined) {
-         ctx.letterSpacing = "3px"; // Węższy rozstaw
+         ctx.letterSpacing = "3px";
       }
       ctx.fillText("LIVE AR FITTING SPOT", snapCanvas.width / 2, 115);
       ctx.restore();
@@ -618,8 +621,9 @@
       snapCanvas.toBlob((blob) => { currentSnapBlob = blob; }, 'image/png');
 
       document.getElementById('snapPreviewImg').src = dataUrl;
+      document.getElementById('downloadLink').href = dataUrl;
       document.getElementById('photoModal').style.display = 'flex';
-      videoElement.pause(); // pauza w tle na czas oglądania snapa
+      videoElement.pause();
     }
 
     function closePhotoModal() {
@@ -640,7 +644,6 @@
           }).catch(() => {});
         }
       } else {
-         // Fallback dla przeglądarek desktopowych nie wspierających Web Share
          const link = document.createElement('a');
          link.href = document.getElementById('snapPreviewImg').src;
          link.download = 'GrillzStudio_Snap.png';
